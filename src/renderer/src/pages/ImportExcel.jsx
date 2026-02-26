@@ -455,7 +455,7 @@ export default function ImportExcel({ onUncategorizedCountChange, onUnsyncedTran
                         </button>
                       </div>
                     )}
-                    <Button onClick={handleSelectFile} variant="outline">
+                    <Button onClick={handleSelectFile} variant="default">
                       {fileName ? '파일 변경' : '파일 선택'}
                     </Button>
                     {fileName && (
@@ -487,7 +487,7 @@ export default function ImportExcel({ onUncategorizedCountChange, onUnsyncedTran
                       설정에서 폴더를 지정하면 파일 목록을 불러올 수 있어요.
                     </p>
                   </div>
-                  <Button variant="outline" onClick={() => onNavigate?.('settings', { subtab: 'watcher' })}>
+                  <Button variant="default" onClick={() => onNavigate?.('settings', { subtab: 'watcher' })}>
                     감지 경로 설정
                   </Button>
                 </div>
