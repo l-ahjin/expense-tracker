@@ -1,6 +1,7 @@
 {
   "name": "expense-tracker",
   "version": "1.0.0",
+  "productName": "ExpenseTracker",
   "description": "An Electron application with React",
   "main": "./out/main/index.js",
   "author": "example.com",
@@ -63,5 +64,45 @@
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "vite": "^7.2.6"
+  },
+  "build": {
+    "appId": "com.lajin.expensetracker",
+    "productName": "ExpenseTracker",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "icon": "resources/icon.png",
+    "mac": {
+      "icon": "resources/icon.icns",
+      "category": "public.app-category.finance",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "dmg": {
+      "artifactName": "${productName}-${version}-${arch}.${ext}"
+    },
+    "win": {
+      "icon": "resources/icon.ico",
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "artifactName": "${productName}-${version}-${arch}-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-${arch}-portable.${ext}"
+    }
   }
 }
