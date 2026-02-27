@@ -21,6 +21,23 @@ const PAGES = {
   settings: Settings,
 }
 
+const SYSTEM_FONT_VALUE = '__system__'
+const SYSTEM_FONT_STACK = 'system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif'
+
+function sanitizeFontName(value) {
+  const raw = String(value ?? '').trim()
+  if (!raw) return ''
+  const unwrapped = raw.replace(/^["']+|["']+$/g, '').trim()
+  return unwrapped
+}
+
+function buildAppFontStack(fontValue) {
+  const value = sanitizeFontName(fontValue)
+  if (!value || value === SYSTEM_FONT_VALUE) return SYSTEM_FONT_STACK
+  const escaped = value.replaceAll('"', '\\"')
+  return `"${escaped}", ${SYSTEM_FONT_STACK}`
+}
+
 function friendlySyncErrorMessage(value) {
   const code = String(value ?? '').trim()
   if (!code) return '동기화 실행 중 오류가 발생했어요.'
@@ -95,14 +112,26 @@ function App() {
   const [unsyncedTransactionsCount, setUnsyncedTransactionsCount] = useState(0)
   const [globalSyncBanner, setGlobalSyncBanner] = useState(null)
   const [dismissedSyncBannerKey, setDismissedSyncBannerKey] = useState(null)
+  const [appFontValue, setAppFontValue] = useState(SYSTEM_FONT_VALUE)
 
   useEffect(() => {
     let mounted = true
-    window.api.settings.get('theme_mode')
-      .then((saved) => {
-        if (!mounted || saved == null) return
-        if (saved === 'dark' || saved === true) setIsDark(true)
-        else if (saved === 'light' || saved === false) setIsDark(false)
+    Promise.all([
+      window.api.settings.get('theme_mode').catch(() => null),
+      window.api.settings.get('app_font_family').catch(() => null),
+    ])
+      .then(([savedTheme, savedFont]) => {
+        if (!mounted) return
+        if (savedTheme != null) {
+          if (savedTheme === 'dark' || savedTheme === true) setIsDark(true)
+          else if (savedTheme === 'light' || savedTheme === false) setIsDark(false)
+        }
+        const normalizedSavedFont = sanitizeFontName(savedFont)
+        if (normalizedSavedFont) {
+          setAppFontValue(normalizedSavedFont)
+        } else {
+          setAppFontValue(SYSTEM_FONT_VALUE)
+        }
       })
       .catch(() => {})
     return () => { mounted = false }
@@ -113,6 +142,23 @@ function App() {
     else document.documentElement.classList.remove('dark')
     window.api.app?.setThemeSource?.(isDark ? 'dark' : 'light').catch(() => {})
   }, [isDark])
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--app-font-family', buildAppFontStack(appFontValue))
+  }, [appFontValue])
+
+  useEffect(() => {
+    function handleAppFontSaved(event) {
+      const value = sanitizeFontName(event?.detail?.fontFamily)
+      if (value) {
+        setAppFontValue(value)
+        return
+      }
+      setAppFontValue(SYSTEM_FONT_VALUE)
+    }
+    window.addEventListener('app-font-family-saved', handleAppFontSaved)
+    return () => window.removeEventListener('app-font-family-saved', handleAppFontSaved)
+  }, [])
 
   const refreshUncategorizedCount = useCallback(async () => {
     const count = await window.api.transactions.uncategorizedCount()

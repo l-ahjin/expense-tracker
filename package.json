@@ -40,6 +40,7 @@
     "cheerio": "^1.1.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "font-list": "^1.5.1",
     "googleapis": "^171.4.0",
     "lucide-react": "^0.575.0",
     "officecrypto-tool": "^0.0.19",

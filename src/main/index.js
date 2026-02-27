@@ -5,6 +5,7 @@ import { getDB, closeDB, generateTransactionId, getCardPaymentCategoryId } from 
 import fs from 'fs'
 import { createHash } from 'crypto'
 import { google } from 'googleapis'
+import fontList from 'font-list'
 import { loadWorkbook, parseRows, classifyRows } from './excelParser.js'
 import { applyKeywordRules } from './keywordMatcher.js'
 
@@ -1317,6 +1318,20 @@ function registerIpcHandlers() {
 
   ipcMain.handle('settings:delete', (_, key) => {
     db.prepare('DELETE FROM settings WHERE key = ?').run(key)
+  })
+
+  ipcMain.handle('fonts:getInstalled', async () => {
+    try {
+      const fonts = await fontList.getFonts({ disableQuoting: true })
+      const normalized = Array.from(new Set(
+        (Array.isArray(fonts) ? fonts : [])
+          .map((font) => String(font ?? '').trim())
+          .filter(Boolean)
+      )).sort((a, b) => a.localeCompare(b, 'ko', { sensitivity: 'base' }))
+      return { fonts: normalized, error: null }
+    } catch {
+      return { fonts: [], error: '설치된 폰트 목록을 불러오지 못했어요. 시스템 기본만 사용할 수 있어요.' }
+    }
   })
 
   ipcMain.handle('app:setThemeSource', (_, themeSource) => {

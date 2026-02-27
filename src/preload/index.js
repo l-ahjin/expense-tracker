@@ -82,6 +82,10 @@ contextBridge.exposeInMainWorld('api', {
     delete: (key) => ipcRenderer.invoke('settings:delete', key),
   },
 
+  fonts: {
+    getInstalled: () => ipcRenderer.invoke('fonts:getInstalled'),
+  },
+
   googleSheets: {
     selectServiceAccountFile: () => ipcRenderer.invoke('google-sheets:selectServiceAccountFile'),
     testConnection: (data) => ipcRenderer.invoke('google-sheets:testConnection', data),
