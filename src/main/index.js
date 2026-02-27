@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, safeStorage, nativeTheme } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, safeStorage, nativeTheme, Menu } from 'electron'
 import { join, basename, dirname, extname } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { getDB, closeDB, generateTransactionId, getCardPaymentCategoryId } from './db'
@@ -2766,6 +2766,7 @@ function createWindow() {
       nodeIntegration: false
     }
   })
+  win.removeMenu()
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(process.env['ELECTRON_RENDERER_URL'])
@@ -2794,10 +2795,24 @@ function createWindow() {
   })
 }
 
+function setupApplicationMenu() {
+  if (process.platform === 'darwin') {
+    const menu = Menu.buildFromTemplate([
+      {
+        label: app.name,
+        submenu: [{ role: 'quit' }]
+      }
+    ])
+    Menu.setApplicationMenu(menu)
+  } else {
+    Menu.setApplicationMenu(null)
+  }
+}
 app.whenReady().then(() => {
   getDB()
   recoverInterruptedSyncRunsOnStartup()
   registerIpcHandlers()
+  setupApplicationMenu()
   electronApp.setAppUserModelId('com.electron')
   app.on('browser-window-created', (_, window) => optimizer.watchWindowShortcuts(window))
   createWindow()
