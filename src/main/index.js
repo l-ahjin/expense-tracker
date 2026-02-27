@@ -2735,6 +2735,79 @@ function registerIpcHandlers() {
     db.exec(`VACUUM INTO '${escaped}'`)
   })
 
+  ipcMain.handle('backup:getResetPreview', () => {
+    const db = getDB()
+    const counts = {
+      transactions: Number(db.prepare('SELECT COUNT(*) AS c FROM transactions').get()?.c ?? 0),
+      categories: Number(db.prepare('SELECT COUNT(*) AS c FROM categories').get()?.c ?? 0),
+      assets: Number(db.prepare('SELECT COUNT(*) AS c FROM assets').get()?.c ?? 0),
+      assetGroups: Number(db.prepare('SELECT COUNT(*) AS c FROM asset_groups').get()?.c ?? 0),
+      imports: Number(db.prepare('SELECT COUNT(*) AS c FROM excel_imports').get()?.c ?? 0),
+      syncRuns: Number(db.prepare('SELECT COUNT(*) AS c FROM sync_runs').get()?.c ?? 0),
+    }
+    return { counts }
+  })
+
+  ipcMain.handle('backup:resetData', async (_, payload = {}) => {
+    const mode = payload?.mode === 'full' ? 'full' : 'partial'
+    const selections = {
+      transactions: Boolean(payload?.selections?.transactions),
+      imports: Boolean(payload?.selections?.imports),
+      syncHistory: Boolean(payload?.selections?.syncHistory),
+    }
+
+    if (activeSyncRunState?.status === 'running') {
+      throw new Error('동기화가 진행 중일 때는 초기화를 실행할 수 없어요.')
+    }
+
+    if (mode === 'partial' && !selections.transactions && !selections.imports && !selections.syncHistory) {
+      throw new Error('부분 초기화할 항목을 선택해 주세요.')
+    }
+
+    if (mode === 'full') {
+      const dbPath = join(app.getPath('userData'), 'expense-tracker.db')
+      const walPath = `${dbPath}-wal`
+      const shmPath = `${dbPath}-shm`
+
+      closeDB()
+
+      try { if (fs.existsSync(walPath)) fs.unlinkSync(walPath) } catch {}
+      try { if (fs.existsSync(shmPath)) fs.unlinkSync(shmPath) } catch {}
+      try { if (fs.existsSync(dbPath)) fs.unlinkSync(dbPath) } catch {}
+
+      await dialog.showMessageBox({
+        type: 'info',
+        message: '초기화 완료',
+        detail: '전체 초기화가 완료되어 앱을 재시작해요.',
+        buttons: ['확인'],
+      })
+
+      app.relaunch()
+      app.exit(0)
+      return { ok: true, mode: 'full' }
+    }
+
+    const db = getDB()
+    const run = db.transaction(() => {
+      if (selections.transactions) {
+        db.prepare('DELETE FROM transactions').run()
+        db.prepare(`DELETE FROM sync_change_log WHERE entity_type = 'transactions'`).run()
+      }
+
+      if (selections.imports) {
+        db.prepare('DELETE FROM excel_imports').run()
+      }
+
+      if (selections.syncHistory) {
+        db.prepare('DELETE FROM sync_runs').run()
+        activeSyncRunState = null
+      }
+    })
+    run()
+
+    return { ok: true, mode: 'partial' }
+  })
+
   // 백업 복원
   ipcMain.handle('backup:import', async () => {
     const result = await dialog.showOpenDialog({

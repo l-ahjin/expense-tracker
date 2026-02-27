@@ -106,6 +106,8 @@ contextBridge.exposeInMainWorld('api', {
   backup: {
     export: () => ipcRenderer.invoke('backup:export'),
     import: () => ipcRenderer.invoke('backup:import'),
+    getResetPreview: () => ipcRenderer.invoke('backup:getResetPreview'),
+    resetData: (payload) => ipcRenderer.invoke('backup:resetData', payload),
   },
 
   app: {
