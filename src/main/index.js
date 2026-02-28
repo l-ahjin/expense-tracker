@@ -915,15 +915,15 @@ function registerIpcHandlers() {
     return db.prepare(`
       INSERT INTO parser_templates
         (name, connection_type, password, start_row, amount_type,
-        col_date, col_description, col_amount, col_amount_in, col_amount_out, col_balance, col_type)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        col_date, col_description, col_amount, col_amount_in, col_amount_out, col_balance, col_type, memo)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       data.name, data.connection_type, encryptedPassword,
       data.start_row, data.amount_type,
       data.col_date, data.col_description,
       data.col_amount ?? null, data.col_amount_in ?? null,
       data.col_amount_out ?? null, data.col_balance ?? null,
-      data.col_type ?? null
+      data.col_type ?? null, data.memo ?? null
     )
   })
 
@@ -936,7 +936,7 @@ function registerIpcHandlers() {
       UPDATE parser_templates
       SET name = ?, connection_type = ?, password = ?, start_row = ?, amount_type = ?,
           col_date = ?, col_description = ?, col_amount = ?,
-          col_amount_in = ?, col_amount_out = ?, col_balance = ?, col_type = ?
+          col_amount_in = ?, col_amount_out = ?, col_balance = ?, col_type = ?, memo = ?
       WHERE id = ?
     `).run(
       data.name, data.connection_type, encryptedPassword,
@@ -944,7 +944,7 @@ function registerIpcHandlers() {
       data.col_date, data.col_description,
       data.col_amount ?? null, data.col_amount_in ?? null,
       data.col_amount_out ?? null, data.col_balance ?? null,
-      data.col_type ?? null, id
+      data.col_type ?? null, data.memo ?? null, id
     )
   })
 

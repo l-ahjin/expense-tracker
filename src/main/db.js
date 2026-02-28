@@ -80,6 +80,7 @@ function initSchema() {
       name TEXT NOT NULL,
       connection_type TEXT NOT NULL CHECK(connection_type IN ('은행/체크카드', '신용카드')),
       password TEXT,
+      memo TEXT,
       start_row INTEGER NOT NULL DEFAULT 1,
       amount_type TEXT NOT NULL CHECK(amount_type IN ('split', 'single', 'expense_only')),
       col_date TEXT NOT NULL,
@@ -207,6 +208,7 @@ function initSchema() {
 
   migrateSyncSchema()
   migrateSyncChangeLogSchema()
+  migrateParserTemplateSchema()
   seedAssetGroups()
   seedSystemCategories()
   seedDefaultSettings()
@@ -376,6 +378,12 @@ function migrateSyncChangeLogSchema() {
       VALUES ('transactions', CAST(OLD.id AS TEXT), 'delete');
     END;
   `)
+}
+
+function migrateParserTemplateSchema() {
+  if (!hasColumn('parser_templates', 'memo')) {
+    db.prepare('ALTER TABLE parser_templates ADD COLUMN memo TEXT').run()
+  }
 }
 
 function seedAssetGroups() {

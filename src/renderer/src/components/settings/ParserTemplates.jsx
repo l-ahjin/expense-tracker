@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -15,6 +16,7 @@ const EMPTY_FORM = {
   name: '',
   connection_type: '은행/체크카드',
   password: '',
+  memo: '',
   start_row: 1,
   amount_type: 'split',
   col_date: '',
@@ -26,6 +28,11 @@ const EMPTY_FORM = {
   col_type: '',
 }
 
+const CONNECTION_TYPE_BADGE = {
+  '은행/체크카드': 'secondary',
+  '신용카드': 'destructive',
+}
+
 function HelpTooltip({ text }) {
   return (
     <TooltipProvider>
@@ -33,7 +40,7 @@ function HelpTooltip({ text }) {
         <TooltipTrigger asChild>
           <HelpCircle size={13} className="text-muted-foreground cursor-help inline-block ml-1" />
         </TooltipTrigger>
-        <TooltipContent className="max-w-56 text-xs">
+        <TooltipContent className="max-w-56 text-xs bg-background border border-border text-foreground">
           {text}
         </TooltipContent>
       </Tooltip>
@@ -117,6 +124,7 @@ export default function ParserTemplates() {
       name: template.name,
       connection_type: template.connection_type,
       password: template.password ?? '',
+      memo: template.memo ?? '',
       start_row: template.start_row,
       amount_type: template.amount_type,
       col_date: template.col_date ?? '',
@@ -193,6 +201,7 @@ export default function ParserTemplates() {
     const data = {
       ...form,
       start_row: Number(form.start_row),
+      memo: form.memo?.trim() ? form.memo.trim() : null,
       col_date: form.col_date || null,
       col_description: form.col_description || null,
       col_amount: form.col_amount || null,
@@ -254,10 +263,18 @@ export default function ParserTemplates() {
             <Card key={t.id}>
               <CardContent className="py-4 flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">{t.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {t.connection_type} · {t.amount_type} · {t.start_row}행부터
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium">{t.name}</p>
+                    <Badge
+                      variant={CONNECTION_TYPE_BADGE[t.connection_type] ?? 'outline'}
+                      className="text-xs"
+                    >
+                      {t.connection_type}
+                    </Badge>
+                  </div>
+                  {t.memo ? (
+                    <p className="text-xs text-muted-foreground mt-0.5">{t.memo}</p>
+                  ) : null}
                 </div>
                 <div className="flex gap-2">
                   <Button variant="ghost" size="icon" onClick={() => openEdit(t)}>
@@ -401,8 +418,8 @@ export default function ParserTemplates() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-background border-border">
-                    <SelectItem value="split">입금/출금 분리 (split)</SelectItem>
-                    <SelectItem value="single">단일 컬럼 양수/음수 (single)</SelectItem>
+                    <SelectItem value="split">입금/출금 분리</SelectItem>
+                    <SelectItem value="single">단일 컬럼 양수/음수</SelectItem>
                   </SelectContent>
                 </Select>
               )}
@@ -438,6 +455,18 @@ export default function ParserTemplates() {
             {errors.cols && (
               <p className="text-sm text-destructive">{errors.cols}</p>
             )}
+
+            <div className="space-y-1.5">
+              <Label>
+                메모
+                <span className="text-muted-foreground text-xs ml-1">(선택)</span>
+              </Label>
+              <Input
+                value={form.memo}
+                onChange={(e) => set('memo', e.target.value)}
+                placeholder="앱/웹에서 엑셀을 다운로드할 때 참고할 메모를 입력하세요."
+              />
+            </div>
             <DialogFooter>
               <CancelButton onClick={() => setOpen(false)} />
               <SaveButton type="submit" />
