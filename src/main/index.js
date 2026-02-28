@@ -2844,6 +2844,7 @@ function registerIpcHandlers() {
 function createWindow() {
   const win = new BrowserWindow({
     title: 'Expense tracker',
+    useContentSize: true,
     width: 1440,
     height: 900,
     minWidth: 1440,
