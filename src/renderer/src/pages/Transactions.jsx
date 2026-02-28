@@ -12,6 +12,11 @@ import { SaveButton, CancelButton } from '@/components/ui/confirm-buttons'
 import { Trash2, Search, ChevronLeft, ChevronRight, TrendingUp, TrendingDown, ArrowRightLeft, CalendarDays, AlertTriangle, ChevronDown, CheckSquare, Square, Tag, Plus, Lock, LockOpen, Info } from 'lucide-react'
 
 const ALL = '__all__'
+const TOGGLE_ACTIVE = 'bg-[hsl(var(--toggle-active))] text-[hsl(var(--toggle-active-foreground))]'
+const TOGGLE_IDLE = 'text-[hsl(var(--toggle-idle-foreground))] hover:bg-[hsl(var(--toggle-idle))]'
+const TOGGLE_ACTIVE_BG = 'bg-[hsl(var(--toggle-active))]'
+const TOGGLE_ACTIVE_BORDER_SOFT = 'border-[hsl(var(--toggle-active))]/40'
+const TOGGLE_ACTIVE_TEXT = 'text-[hsl(var(--toggle-active))]'
 
 const TYPE_COLORS = {
   '수입': 'text-green-600 dark:text-green-500',
@@ -21,21 +26,27 @@ const TYPE_COLORS = {
 
 const CAT_TYPE_STYLE = {
   '수입': {
-    border: 'border-green-500/40 dark:border-green-500/30',
-    btn: 'border-green-500/40 text-green-700 dark:text-green-400 hover:bg-green-500/10',
-    activeBtn: 'bg-green-600 text-white border-green-600 shadow-sm',
-    backBtn: 'text-green-700 dark:text-green-400 hover:text-green-800',
-    typeBtnIdle: 'border-green-500/40 text-green-700 dark:text-green-400 hover:bg-green-500/10',
+    border: 'border-border/60',
+    selectedBorder: 'border-emerald-500/45 dark:border-emerald-500/35',
+    selectedBg: 'bg-emerald-500/12',
+    btn: 'border-foreground/25 text-foreground bg-emerald-500/12 hover:bg-emerald-500/20',
+    activeBtn: 'border-foreground/35 text-foreground bg-emerald-500/26 shadow-sm',
+    backBtn: 'text-foreground/80 hover:text-foreground',
+    typeBtnIdle: 'border-foreground/25 text-foreground bg-emerald-500/12 hover:bg-emerald-500/20',
   },
   '지출': {
-    border: 'border-red-500/40 dark:border-red-500/30',
-    btn: 'border-red-500/40 text-red-700 dark:text-red-400 hover:bg-red-500/10',
-    activeBtn: 'bg-red-600 text-white border-red-600 shadow-sm',
-    backBtn: 'text-red-700 dark:text-red-400 hover:text-red-800',
-    typeBtnIdle: 'border-red-500/40 text-red-700 dark:text-red-400 hover:bg-red-500/10',
+    border: 'border-border/60',
+    selectedBorder: 'border-rose-500/45 dark:border-rose-500/35',
+    selectedBg: 'bg-rose-500/12',
+    btn: 'border-foreground/25 text-foreground bg-rose-500/12 hover:bg-rose-500/20',
+    activeBtn: 'border-foreground/35 text-foreground bg-rose-500/26 shadow-sm',
+    backBtn: 'text-foreground/80 hover:text-foreground',
+    typeBtnIdle: 'border-foreground/25 text-foreground bg-rose-500/12 hover:bg-rose-500/20',
   },
   '이체': {
     border: 'border-border/60',
+    selectedBorder: 'border-slate-400/50 dark:border-slate-500/45',
+    selectedBg: 'bg-muted/50',
     btn: 'border-border/60 text-muted-foreground hover:bg-muted',
     activeBtn: 'bg-muted text-foreground border-border shadow-sm',
     backBtn: 'text-muted-foreground hover:text-foreground',
@@ -198,11 +209,21 @@ function MonthPicker({ selectedMonth, onSelect, months }) {
         </DialogHeader>
         <div className="p-4 space-y-4">
           <div className="flex items-center justify-between">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setViewYear(y => y - 1)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-lg hover:bg-[hsl(var(--toggle-active))]/12 hover:text-[hsl(var(--toggle-active))]"
+              onClick={() => setViewYear(y => y - 1)}
+            >
               <ChevronLeft size={14} />
             </Button>
             <span className="text-[15px] font-bold">{viewYear}년</span>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg" onClick={() => setViewYear(y => y + 1)}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-lg hover:bg-[hsl(var(--toggle-active))]/12 hover:text-[hsl(var(--toggle-active))]"
+              onClick={() => setViewYear(y => y + 1)}
+            >
               <ChevronRight size={14} />
             </Button>
           </div>
@@ -215,23 +236,27 @@ function MonthPicker({ selectedMonth, onSelect, months }) {
               return (
                 <button key={i} onClick={() => handleSelect(i)}
                   className={`relative py-2.5 rounded-xl text-[13px] font-medium transition-all
-                    ${isSelected ? 'bg-blue-600 text-white shadow-sm'
-                      : isToday ? 'bg-muted border border-blue-400/40 text-blue-600 dark:text-blue-400'
+                    ${isSelected ? `${TOGGLE_ACTIVE_BG} text-[hsl(var(--toggle-active-foreground))] shadow-sm`
+                      : isToday ? `bg-muted border ${TOGGLE_ACTIVE_BORDER_SOFT} ${TOGGLE_ACTIVE_TEXT}`
                       : 'hover:bg-muted text-foreground'}`}
                 >
                   {label}
-                  {hasData && <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-500" />}
+                  {hasData && <span className={`absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${TOGGLE_ACTIVE_BG}`} />}
                 </button>
               )
             })}
           </div>
-          <Button variant="outline" className="w-full rounded-xl text-[12px] h-8 border-border/60"
+          <Button
+            variant="outline"
+            className="w-full rounded-xl text-[12px] h-8 border-border/60 hover:bg-[hsl(var(--toggle-active))]/12 hover:text-[hsl(var(--toggle-active))] hover:border-[hsl(var(--toggle-active))]/35"
             onClick={() => {
               const today = new Date()
               onSelect(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`)
               setOpen(false)
             }}
-          >이번 달로 이동</Button>
+          >
+            이번 달로 이동
+          </Button>
         </div>
       </DialogContent>
     </Dialog>
@@ -290,7 +315,7 @@ function CategoryPicker({
   return (
     <div className={`rounded-xl border p-3 bg-background space-y-3 shadow-sm transition-colors ${selectedType ? style.border : 'border-border/60'}`}>
       {selectedCat && (
-        <div className={`flex items-center gap-1.5 text-[11px] bg-muted/50 p-1.5 rounded-md border ${style.border}`}>
+        <div className={`flex items-center gap-1.5 text-[11px] p-1.5 rounded-md border ${style.selectedBg ?? 'bg-muted/50'} ${style.selectedBorder ?? style.border}`}>
           <span className="text-muted-foreground">선택됨:</span>
           {selectedCatParent && <span className="text-muted-foreground">{selectedCatParent.name} ›</span>}
           <span className="font-bold">{selectedCat.name}</span>
@@ -560,7 +585,7 @@ function SearchCategoryPicker({ categories, selectedIds = [], setSelectedIds, ty
           onClick={() => toggleMany(visibleSelectableIds)}
             className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-all ${
             isAllSelected(visibleSelectableIds)
-              ? 'bg-blue-600 text-white border-blue-600'
+              ? 'bg-[hsl(var(--toggle-active))] text-[hsl(var(--toggle-active-foreground))] border-[hsl(var(--toggle-active))]'
               : 'border-border/60 text-muted-foreground hover:bg-muted'
           }`}
           title={!typeFilter ? '현재 보이는 전체 카테고리 선택/해제' : `${typeFilter} 전체 선택/해제`}
@@ -598,7 +623,7 @@ function SearchCategoryPicker({ categories, selectedIds = [], setSelectedIds, ty
                     onClick={() => toggleMany(idsForParents(section.normal))}
                     className={`px-2 py-0.5 rounded-md text-[10px] font-semibold border transition-colors ${
                       isAllSelected(idsForParents(section.normal))
-                        ? 'bg-blue-600 text-white border-blue-600'
+                        ? 'bg-[hsl(var(--toggle-active))] text-[hsl(var(--toggle-active-foreground))] border-[hsl(var(--toggle-active))]'
                         : 'border-border/60 text-muted-foreground hover:bg-muted'
                     }`}
                 >
@@ -620,7 +645,7 @@ function SearchCategoryPicker({ categories, selectedIds = [], setSelectedIds, ty
                         onClick={() => toggleMany(idsForParents(section.normal))}
                       className={`px-2 py-1 rounded-md text-[11px] font-semibold border transition-colors ${
                           isAllSelected(idsForParents(section.normal))
-                            ? 'bg-blue-600 text-white border-blue-600'
+                            ? 'bg-[hsl(var(--toggle-active))] text-[hsl(var(--toggle-active-foreground))] border-[hsl(var(--toggle-active))]'
                             : 'border-border/60 text-muted-foreground hover:bg-muted'
                         }`}
                       >
@@ -643,7 +668,7 @@ function SearchCategoryPicker({ categories, selectedIds = [], setSelectedIds, ty
                         onClick={() => toggleMany(idsForParents(section.adjustment))}
                       className={`px-2 py-1 rounded-md text-[11px] font-semibold border transition-colors ${
                           isAllSelected(idsForParents(section.adjustment))
-                            ? 'bg-blue-600 text-white border-blue-600'
+                            ? 'bg-[hsl(var(--toggle-active))] text-[hsl(var(--toggle-active-foreground))] border-[hsl(var(--toggle-active))]'
                             : 'border-border/60 text-muted-foreground hover:bg-muted'
                         }`}
                       >
@@ -1456,7 +1481,7 @@ function UncategorizedTab({ categories, uncategorizedCount, onCountChange }) {
         <Button
           onClick={handleBulkAssign}
           disabled={selectedCount === 0 || !bulkCategoryId || bulkCategoryInvalid}
-          className="shrink-0 bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-4 h-9 text-[13px] font-bold disabled:opacity-40"
+          className="shrink-0 rounded-xl px-4 h-9 text-[13px] font-bold disabled:opacity-40"
         >
           <Tag size={13} className="mr-1.5" />
           {selectedCount > 0 ? `${selectedCount}건 지정` : '지정'}
@@ -1565,7 +1590,7 @@ function UncategorizedTab({ categories, uncategorizedCount, onCountChange }) {
             <AlertDialogCancel className="rounded-xl border-border/60" onClick={async () => { setKeywordRuleDialog(null); await load(); onCountChange() }}>
               건너뛰기
             </AlertDialogCancel>
-            <AlertDialogAction onClick={handleKeywordRuleConfirm} className="bg-blue-600 text-white hover:bg-blue-700 rounded-xl border-none">
+            <AlertDialogAction onClick={handleKeywordRuleConfirm} className="rounded-xl border-none">
               규칙 추가
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1598,7 +1623,7 @@ function UncategorizedTab({ categories, uncategorizedCount, onCountChange }) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogAction className="bg-blue-600 text-white hover:bg-blue-700 rounded-xl border-none" onClick={() => setBulkAssignError(null)}>
+            <AlertDialogAction className="rounded-xl border-none" onClick={() => setBulkAssignError(null)}>
               확인
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1676,14 +1701,14 @@ function MonthlyTab({ assets, categories, onCountChange, externalReloadKey = 0 }
             <button
               type="button"
               onClick={() => setCalcMode('base')}
-              className={`px-2 py-1 rounded-md text-xs font-semibold ${calcMode === 'base' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}
+              className={`px-2 py-1 rounded-md text-xs font-semibold ${calcMode === 'base' ? TOGGLE_ACTIVE : TOGGLE_IDLE}`}
             >
               기본
             </button>
             <button
               type="button"
               onClick={() => setCalcMode('actual')}
-              className={`px-2 py-1 rounded-md text-xs font-semibold ${calcMode === 'actual' ? 'bg-blue-600 text-white' : 'text-muted-foreground'}`}
+              className={`px-2 py-1 rounded-md text-xs font-semibold ${calcMode === 'actual' ? TOGGLE_ACTIVE : TOGGLE_IDLE}`}
             >
               실질
             </button>
@@ -1972,7 +1997,7 @@ function SearchTab({ assets, categories, onCountChange, externalFilterRequest = 
             >
               초기화
             </Button>
-            <Button onClick={() => search(0)} disabled={loading} className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-6">
+            <Button onClick={() => search(0)} disabled={loading} className="rounded-xl px-6">
               <Search size={13} className="mr-1.5" />
               {loading ? '검색 중...' : '검색'}
             </Button>

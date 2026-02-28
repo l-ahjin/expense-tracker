@@ -16,6 +16,18 @@ const TIMEZONE_OPTIONS = [
 
 const SYSTEM_FONT_VALUE = '__system__'
 const SYSTEM_FONT_LABEL = '시스템 기본'
+const DEFAULT_UI_STYLE = 'teal'
+const UI_STYLE_OPTIONS = [
+  { value: 'teal', label: 'Teal', swatchClass: 'bg-[hsl(176_46%_34%)]' },
+  { value: 'amber', label: 'Amber', swatchClass: 'bg-[hsl(39_66%_55%)]' },
+  { value: 'indigo', label: 'Indigo', swatchClass: 'bg-[hsl(231_46%_46%)]' },
+  { value: 'rose', label: 'Rose', swatchClass: 'bg-[hsl(342_62%_58%)]' },
+  { value: 'violet-gray', label: 'Violet Gray', swatchClass: 'bg-[hsl(258_26%_48%)]' },
+  { value: 'cyan', label: 'Cyan', swatchClass: 'bg-[hsl(191_78%_42%)]' },
+  { value: 'coral', label: 'Coral', swatchClass: 'bg-[hsl(11_80%_59%)]' },
+  { value: 'slate-blue', label: 'Slate Blue', swatchClass: 'bg-[hsl(224_39%_52%)]' },
+  { value: 'sand', label: 'Sand', swatchClass: 'bg-[hsl(34_42%_56%)]' },
+]
 
 function normalizeFontValue(value) {
   if (typeof value !== 'string') return SYSTEM_FONT_VALUE
@@ -24,6 +36,7 @@ function normalizeFontValue(value) {
 }
 
 export default function GeneralSettings() {
+  const [uiStyle, setUiStyle] = useState(DEFAULT_UI_STYLE)
   const [timezoneMode, setTimezoneMode] = useState('system')
   const [use24Hour, setUse24Hour] = useState(true)
   const [fontFamily, setFontFamily] = useState(SYSTEM_FONT_VALUE)
@@ -37,6 +50,7 @@ export default function GeneralSettings() {
   const [saved, setSaved] = useState(false)
 
   const [initialSettings, setInitialSettings] = useState({
+    uiStyle: DEFAULT_UI_STYLE,
     timezoneMode: 'system',
     use24Hour: true,
     fontFamily: SYSTEM_FONT_VALUE,
@@ -48,22 +62,26 @@ export default function GeneralSettings() {
   useEffect(() => {
     let mounted = true
     Promise.all([
+      window.api.settings.get('ui_style').catch(() => null),
       window.api.settings.get('timezone_mode').catch(() => null),
       window.api.settings.get('time_format_24h').catch(() => null),
       window.api.settings.get('app_font_family').catch(() => null),
     ])
-      .then(([savedTimezoneMode, savedUse24Hour, savedFontFamily]) => {
+      .then(([savedUiStyle, savedTimezoneMode, savedUse24Hour, savedFontFamily]) => {
         if (!mounted) return
+        const nextUiStyle = UI_STYLE_OPTIONS.some((opt) => opt.value === savedUiStyle) ? savedUiStyle : DEFAULT_UI_STYLE
         const nextTimezoneMode =
           typeof savedTimezoneMode === 'string' && TIMEZONE_OPTIONS.some((opt) => opt.value === savedTimezoneMode)
             ? savedTimezoneMode
             : 'system'
         const nextUse24Hour = typeof savedUse24Hour === 'boolean' ? savedUse24Hour : true
         const nextFontFamily = normalizeFontValue(savedFontFamily)
+        setUiStyle(nextUiStyle)
         setTimezoneMode(nextTimezoneMode)
         setUse24Hour(nextUse24Hour)
         setFontFamily(nextFontFamily)
         setInitialSettings({
+          uiStyle: nextUiStyle,
           timezoneMode: nextTimezoneMode,
           use24Hour: nextUse24Hour,
           fontFamily: nextFontFamily,
@@ -144,6 +162,7 @@ export default function GeneralSettings() {
   }, [fontOpen, fontFamily, selectableFontOptions])
 
   const hasUnsavedChanges = (
+    uiStyle !== initialSettings.uiStyle ||
     timezoneMode !== initialSettings.timezoneMode ||
     use24Hour !== initialSettings.use24Hour ||
     fontFamily !== initialSettings.fontFamily
@@ -152,10 +171,12 @@ export default function GeneralSettings() {
   const selectedFontLabel = fontFamily === SYSTEM_FONT_VALUE ? SYSTEM_FONT_LABEL : fontFamily
 
   async function handleSave() {
+    await window.api.settings.set('ui_style', uiStyle)
     await window.api.settings.set('timezone_mode', timezoneMode)
     await window.api.settings.set('time_format_24h', use24Hour)
     await window.api.settings.set('app_font_family', fontFamily)
-    setInitialSettings({ timezoneMode, use24Hour, fontFamily })
+    setInitialSettings({ uiStyle, timezoneMode, use24Hour, fontFamily })
+    window.dispatchEvent(new CustomEvent('app-ui-style-saved', { detail: { uiStyle } }))
     window.dispatchEvent(new CustomEvent('app-font-family-saved', { detail: { fontFamily } }))
     setSaved(true)
     setTimeout(() => setSaved(false), 2000)
@@ -198,6 +219,30 @@ export default function GeneralSettings() {
         <CardDescription>앱 전반에 공통으로 적용되는 표시 설정을 관리해요.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label>스타일</Label>
+          <div className="flex items-center gap-3">
+            {UI_STYLE_OPTIONS.map((option) => {
+              const selected = uiStyle === option.value
+              return (
+                <button
+                  type="button"
+                  key={option.value}
+                  onClick={() => setUiStyle(option.value)}
+                  className={`h-10 w-10 rounded-full border transition-all ${selected ? 'border-foreground ring-2 ring-offset-2 ring-foreground/40' : 'border-border/70 hover:scale-105'}`}
+                  aria-label={`${option.label} 스타일`}
+                  title={`${option.label} 스타일`}
+                >
+                  <span className={`block h-full w-full rounded-full ${option.swatchClass}`} />
+                </button>
+              )
+            })}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            토글/세그먼트 버튼의 강조 색상 스타일을 선택해요.
+          </p>
+        </div>
+
         <div className="space-y-2">
           <Label>글꼴</Label>
           <div className="max-w-sm relative" ref={fontPanelRef}>
@@ -252,8 +297,12 @@ export default function GeneralSettings() {
                       <button
                         type="button"
                         key={`${option.value}-${index}`}
-                        className={`w-full rounded-sm px-2 py-2 text-left text-sm flex items-center justify-between ${
-                          active ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'
+                        className={`w-full rounded-sm px-2 py-2 text-left text-sm flex items-center justify-between transition-colors ${
+                          active
+                            ? 'bg-[hsl(var(--toggle-active))]/20 text-foreground'
+                            : selected
+                              ? 'bg-[hsl(var(--toggle-active))]/10 text-foreground hover:bg-[hsl(var(--toggle-active))]/15'
+                              : 'hover:bg-[hsl(var(--toggle-active))]/12'
                         }`}
                         onMouseEnter={() => setHighlightedIndex(index)}
                         onClick={() => handleFontSelect(option.value)}
@@ -308,7 +357,7 @@ export default function GeneralSettings() {
 
         {hasUnsavedChanges ? (
           <div className="rounded-lg border border-amber-200/70 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
-            글꼴, 시간대, 24시간제 설정이 변경되었어요. 저장 버튼을 눌러 반영해 주세요.
+            스타일, 글꼴, 시간대, 24시간제 설정이 변경되었어요. 저장 버튼을 눌러 반영해 주세요.
           </div>
         ) : null}
 

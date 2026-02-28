@@ -24,58 +24,70 @@
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
+  --toggle-active: 176 46% 34%;
+  --toggle-active-foreground: 165 100% 97%;
+  --toggle-idle: 216 26% 93%;
+  --toggle-idle-foreground: 220 14% 34%;
 }
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 220 30% 97%;
+    --foreground: 222 28% 14%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 222 28% 14%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
+    --popover-foreground: 222 28% 14%;
+    --primary: 220 65% 44%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
+    --secondary: 220 22% 93%;
+    --secondary-foreground: 222 24% 20%;
+    --muted: 220 18% 94%;
+    --muted-foreground: 220 12% 42%;
+    --accent: 220 18% 92%;
+    --accent-foreground: 222 24% 20%;
+    --destructive: 2 74% 56%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 220 20% 86%;
+    --input: 220 20% 88%;
+    --ring: 176 46% 34%;
     --radius: 0.5rem;
-    --sidebar: 210 40% 98%;
-    --sidebar-active: 214.3 31.8% 91.4%;
-    --sidebar-hover: 210 40% 96.1%;
+    --sidebar: 220 26% 96%;
+    --sidebar-active: 220 30% 89%;
+    --sidebar-hover: 220 24% 92%;
+    --toggle-active: 176 46% 34%;
+    --toggle-active-foreground: 165 100% 97%;
+    --toggle-idle: 216 26% 93%;
+    --toggle-idle-foreground: 220 14% 34%;
   }
 
   .dark {
-    --background: 222 16% 12%;
-    --foreground: 210 40% 98%;
-    --card: 222 16% 15%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 16% 15%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 222 16% 18%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 222 16% 18%;
-    --muted-foreground: 215 20% 55%;
-    --accent: 222 16% 20%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 50%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 222 16% 20%;
-    --input: 222 16% 20%;
-    --ring: 210 40% 98%;
-    --sidebar: 222 16% 10%;
-    --sidebar-active: 222 16% 18%;
-    --sidebar-hover: 222 16% 15%;
+    --background: 222 22% 12%;
+    --foreground: 210 26% 92%;
+    --card: 222 20% 16%;
+    --card-foreground: 210 26% 92%;
+    --popover: 222 20% 16%;
+    --popover-foreground: 210 26% 92%;
+    --primary: 214 78% 62%;
+    --primary-foreground: 222 35% 12%;
+    --secondary: 222 16% 22%;
+    --secondary-foreground: 210 24% 88%;
+    --muted: 222 15% 24%;
+    --muted-foreground: 216 14% 70%;
+    --accent: 222 16% 24%;
+    --accent-foreground: 210 24% 88%;
+    --destructive: 0 72% 60%;
+    --destructive-foreground: 210 30% 96%;
+    --border: 222 14% 28%;
+    --input: 222 14% 28%;
+    --ring: 176 45% 45%;
+    --sidebar: 222 24% 10%;
+    --sidebar-active: 222 16% 24%;
+    --sidebar-hover: 222 17% 19%;
+    --toggle-active: 176 45% 45%;
+    --toggle-active-foreground: 190 60% 10%;
+    --toggle-idle: 220 20% 24%;
+    --toggle-idle-foreground: 220 16% 76%;
   }
 }
 
@@ -87,6 +99,24 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-family: var(--app-font-family, system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif);
+  }
+
+  input[type="date"] {
+    color-scheme: light;
+  }
+
+  .dark input[type="date"] {
+    color-scheme: dark;
+  }
+
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.95;
+  }
+
+  .dark input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: brightness(0) invert(1) contrast(1.2);
+    opacity: 1;
   }
 }
 

@@ -337,14 +337,21 @@ function SyncRunStepIndicator({ currentStep }) {
         const isCurrent = step.index === currentStep
         const isDone = step.index < currentStep
         return (
-          <div key={step.index} className={`rounded-xl border px-3 py-2 ${isCurrent ? 'border-blue-500/40 bg-blue-500/5' : 'border-border/60 bg-background'}`}>
+          <div
+            key={step.index}
+            className={`rounded-xl border px-3 py-2 ${
+              isCurrent
+                ? 'border-[hsl(var(--toggle-active))]/40 bg-[hsl(var(--toggle-active))]/10'
+                : 'border-border/60 bg-background'
+            }`}
+          >
             <div className="flex items-center gap-2">
               <div
                 className={`grid h-6 w-6 place-items-center rounded-full text-xs font-semibold ${
                   isDone
-                    ? 'bg-emerald-500 text-white'
+                    ? 'bg-[hsl(var(--toggle-active))] text-[hsl(var(--toggle-active-foreground))] opacity-90'
                     : isCurrent
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-[hsl(var(--toggle-active))] text-[hsl(var(--toggle-active-foreground))]'
                       : 'bg-muted text-muted-foreground'
                 }`}
               >

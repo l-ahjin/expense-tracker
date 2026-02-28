@@ -37,21 +37,27 @@ const TYPE_BADGE_CLASS = {
 }
 const CAT_TYPE_STYLE = {
   '수입': {
-    border: 'border-green-500/40 dark:border-green-500/30',
-    btn: 'border-green-500/40 text-green-700 dark:text-green-400 hover:bg-green-500/10',
-    activeBtn: 'bg-green-600 text-white border-green-600 shadow-sm',
-    backBtn: 'text-green-700 dark:text-green-400 hover:text-green-800',
-    typeBtnIdle: 'border-green-500/40 text-green-700 dark:text-green-400 hover:bg-green-500/10',
+    border: 'border-border/60',
+    selectedBorder: 'border-emerald-500/45 dark:border-emerald-500/35',
+    selectedBg: 'bg-emerald-500/12',
+    btn: 'border-foreground/25 text-foreground bg-emerald-500/12 hover:bg-emerald-500/20',
+    activeBtn: 'border-foreground/35 text-foreground bg-emerald-500/26 shadow-sm',
+    backBtn: 'text-foreground/80 hover:text-foreground',
+    typeBtnIdle: 'border-foreground/25 text-foreground bg-emerald-500/12 hover:bg-emerald-500/20',
   },
   '지출': {
-    border: 'border-red-500/40 dark:border-red-500/30',
-    btn: 'border-red-500/40 text-red-700 dark:text-red-400 hover:bg-red-500/10',
-    activeBtn: 'bg-red-600 text-white border-red-600 shadow-sm',
-    backBtn: 'text-red-700 dark:text-red-400 hover:text-red-800',
-    typeBtnIdle: 'border-red-500/40 text-red-700 dark:text-red-400 hover:bg-red-500/10',
+    border: 'border-border/60',
+    selectedBorder: 'border-rose-500/45 dark:border-rose-500/35',
+    selectedBg: 'bg-rose-500/12',
+    btn: 'border-foreground/25 text-foreground bg-rose-500/12 hover:bg-rose-500/20',
+    activeBtn: 'border-foreground/35 text-foreground bg-rose-500/26 shadow-sm',
+    backBtn: 'text-foreground/80 hover:text-foreground',
+    typeBtnIdle: 'border-foreground/25 text-foreground bg-rose-500/12 hover:bg-rose-500/20',
   },
   '이체': {
     border: 'border-border/60',
+    selectedBorder: 'border-slate-400/50 dark:border-slate-500/45',
+    selectedBg: 'bg-muted/50',
     btn: 'border-border/60 text-muted-foreground hover:bg-muted',
     activeBtn: 'bg-muted text-foreground border-border shadow-sm',
     backBtn: 'text-muted-foreground hover:text-foreground',
@@ -182,7 +188,7 @@ function CategoryPicker({ categories, value, onChange, error }) {
   return (
     <div className={`rounded-xl border p-3 bg-background space-y-3 shadow-sm transition-colors ${error ? 'border-destructive' : (selectedType ? style.border : 'border-border/60')}`}>
       {selectedCat && (
-        <div className={`flex items-center gap-1.5 text-[11px] bg-muted/50 p-1.5 rounded-md border ${error ? 'border-destructive' : style.border}`}>
+        <div className={`flex items-center gap-1.5 text-[11px] p-1.5 rounded-md border ${error ? 'bg-muted/50 border-destructive' : `${style.selectedBg ?? 'bg-muted/50'} ${style.selectedBorder ?? style.border}`}`}>
           <span className="text-muted-foreground">선택됨:</span>
           {selectedCatParent && <span className="text-muted-foreground">{selectedCatParent.name} ›</span>}
           <span className="font-bold">{selectedCat.name}</span>

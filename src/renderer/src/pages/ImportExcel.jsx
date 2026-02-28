@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
-import { SaveButton, CancelButton } from '@/components/ui/confirm-buttons'
+import { CancelButton } from '@/components/ui/confirm-buttons'
 import { FileSpreadsheet, AlertTriangle, CheckCircle, ChevronRight, X, RefreshCw, FolderOpen, Info } from 'lucide-react'
 
 const STEPS = ['파일 선택', '자산 선택', '미리보기', '저장 완료']
@@ -91,9 +91,9 @@ function StepIndicator({ current }) {
     <div className="flex items-center gap-2 mb-8">
       {STEPS.map((step, i) => (
         <div key={step} className="flex items-center gap-2">
-          <div className={`flex items-center gap-1.5 text-sm ${i === current ? 'text-foreground font-medium' : i < current ? 'text-blue-500' : 'text-muted-foreground'}`}>
+          <div className={`flex items-center gap-1.5 text-sm ${i === current ? 'text-foreground font-medium' : i < current ? 'text-[hsl(var(--toggle-active))]' : 'text-muted-foreground'}`}>
             <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs
-              ${i === current ? 'bg-blue-600 text-white' : i < current ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'}`}>
+              ${i === current ? 'bg-[hsl(var(--toggle-active))] text-[hsl(var(--toggle-active-foreground))]' : i < current ? 'bg-[hsl(var(--toggle-active))] text-[hsl(var(--toggle-active-foreground))] opacity-90' : 'bg-muted text-muted-foreground'}`}>
               {i < current ? '✓' : i + 1}
             </div>
             {step}
@@ -455,11 +455,11 @@ export default function ImportExcel({ onUncategorizedCountChange, onUnsyncedTran
                         </button>
                       </div>
                     )}
-                    <Button onClick={handleSelectFile} variant="default">
+                    <Button onClick={handleSelectFile} variant={fileName ? 'secondary' : 'default'}>
                       {fileName ? '파일 변경' : '파일 선택'}
                     </Button>
                     {fileName && (
-                      <Button onClick={() => setStep(1)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Button onClick={() => setStep(1)} variant="default">
                         다음
                       </Button>
                     )}
@@ -651,9 +651,9 @@ export default function ImportExcel({ onUncategorizedCountChange, onUnsyncedTran
             {error && <p className="text-sm text-destructive">{error}</p>}
             <div className="flex justify-between pt-2">
               <CancelButton onClick={() => setStep(0)}>이전</CancelButton>
-              <SaveButton onClick={handleParse} disabled={!selectedAssetId || loading}>
+              <Button onClick={handleParse} disabled={!selectedAssetId || loading}>
                 {loading ? '파싱 중...' : '파싱 시작'}
-              </SaveButton>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -771,9 +771,9 @@ export default function ImportExcel({ onUncategorizedCountChange, onUnsyncedTran
 
           <div className="flex justify-between">
             <CancelButton onClick={() => setStep(1)}>이전</CancelButton>
-            <SaveButton onClick={handleSaveClick} disabled={selectedCount === 0 || loading}>
+            <Button onClick={handleSaveClick} disabled={selectedCount === 0 || loading}>
               {loading ? '저장 중...' : `${selectedCount}건 저장`}
-            </SaveButton>
+            </Button>
           </div>
         </div>
       )}
@@ -804,7 +804,6 @@ export default function ImportExcel({ onUncategorizedCountChange, onUnsyncedTran
             <AlertDialogCancel onClick={() => setConfirmSaveDialog(false)}>취소</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => { setConfirmSaveDialog(false); handleSave(false) }}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               저장
             </AlertDialogAction>

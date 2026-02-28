@@ -5,7 +5,6 @@ export function SaveButton({ onClick, children = '저장', type }) {
     <Button
       onClick={onClick}
       type={type}
-      className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-700"
     >
       {children}
     </Button>

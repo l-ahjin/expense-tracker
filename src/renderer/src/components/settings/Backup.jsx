@@ -169,61 +169,98 @@ export default function Backup() {
           <div className="space-y-3">
             <Label>초기화 범위</Label>
             <div className="space-y-2">
-              <label className="flex items-start gap-2 rounded-lg border border-border/60 px-3 py-2 bg-background">
-                <input
-                  type="radio"
-                  name="reset-mode"
-                  checked={resetMode === 'full'}
-                  onChange={() => setResetMode('full')}
-                  className="mt-1"
-                />
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setResetMode('full')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setResetMode('full')
+                  }
+                }}
+                className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 bg-background transition-colors ${
+                  resetMode === 'full'
+                    ? 'border-[hsl(var(--toggle-active))]/50 bg-[hsl(var(--toggle-active))]/10 ring-1 ring-[hsl(var(--toggle-active))]/25'
+                    : 'border-border/60 hover:border-[hsl(var(--toggle-active))]/30'
+                }`}
+              >
                 <div>
-                  <div className="text-sm font-medium">전체 초기화</div>
+                  <div className="text-left text-sm font-medium">전체 초기화</div>
                   <div className="text-xs text-muted-foreground">모든 데이터를 영구 삭제하고 앱을 재시작해요.</div>
                 </div>
-              </label>
-              <label className="flex items-start gap-2 rounded-lg border border-border/60 px-3 py-2 bg-background">
-                <input
-                  type="radio"
-                  name="reset-mode"
-                  checked={resetMode === 'partial'}
-                  onChange={() => setResetMode('partial')}
-                  className="mt-1"
-                />
+              </div>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setResetMode('partial')}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setResetMode('partial')
+                  }
+                }}
+                className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 bg-background transition-colors ${
+                  resetMode === 'partial'
+                    ? 'border-[hsl(var(--toggle-active))]/50 bg-[hsl(var(--toggle-active))]/10 ring-1 ring-[hsl(var(--toggle-active))]/25'
+                    : 'border-border/60 hover:border-[hsl(var(--toggle-active))]/30'
+                }`}
+              >
                 <div className="w-full">
-                  <div className="text-sm font-medium">부분 초기화</div>
+                  <div className="text-left text-sm font-medium">부분 초기화</div>
                   <div className="text-xs text-muted-foreground">선택한 항목만 삭제하고 화면을 새로고침해요.</div>
                   <div className="mt-2 grid gap-2 sm:grid-cols-3">
-                    <label className="flex items-center gap-2 rounded-md border border-border/60 px-2 py-1.5 text-sm">
+                    <label
+                      className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm transition-colors ${
+                        partialSelections.transactions && resetMode === 'partial'
+                          ? 'border-[hsl(var(--toggle-active))]/45 bg-[hsl(var(--toggle-active))]/10'
+                          : 'border-border/60'
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         checked={partialSelections.transactions}
                         onChange={(e) => setPartialSelections((prev) => ({ ...prev, transactions: e.target.checked }))}
                         disabled={resetMode !== 'partial'}
+                        className="h-4 w-4 accent-[hsl(var(--toggle-active))]"
                       />
                       거래 내역
                     </label>
-                    <label className="flex items-center gap-2 rounded-md border border-border/60 px-2 py-1.5 text-sm">
+                    <label
+                      className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm transition-colors ${
+                        partialSelections.imports && resetMode === 'partial'
+                          ? 'border-[hsl(var(--toggle-active))]/45 bg-[hsl(var(--toggle-active))]/10'
+                          : 'border-border/60'
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         checked={partialSelections.imports}
                         onChange={(e) => setPartialSelections((prev) => ({ ...prev, imports: e.target.checked }))}
                         disabled={resetMode !== 'partial'}
+                        className="h-4 w-4 accent-[hsl(var(--toggle-active))]"
                       />
                       가져오기 기록
                     </label>
-                    <label className="flex items-center gap-2 rounded-md border border-border/60 px-2 py-1.5 text-sm">
+                    <label
+                      className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-sm transition-colors ${
+                        partialSelections.syncHistory && resetMode === 'partial'
+                          ? 'border-[hsl(var(--toggle-active))]/45 bg-[hsl(var(--toggle-active))]/10'
+                          : 'border-border/60'
+                      }`}
+                    >
                       <input
                         type="checkbox"
                         checked={partialSelections.syncHistory}
                         onChange={(e) => setPartialSelections((prev) => ({ ...prev, syncHistory: e.target.checked }))}
                         disabled={resetMode !== 'partial'}
+                        className="h-4 w-4 accent-[hsl(var(--toggle-active))]"
                       />
                       동기화 기록
                     </label>
                   </div>
                 </div>
-              </label>
+              </div>
             </div>
           </div>
 

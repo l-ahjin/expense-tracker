@@ -7,6 +7,8 @@ import { CalendarDays, ChevronLeft, ChevronRight, Info } from 'lucide-react'
 import { formatDateRangeLabel } from './utils/format'
 
 function pad2(n) { return String(n).padStart(2, '0') }
+const TOGGLE_ACTIVE = 'bg-[hsl(var(--toggle-active))] text-[hsl(var(--toggle-active-foreground))]'
+const TOGGLE_IDLE = 'text-[hsl(var(--toggle-idle-foreground))] hover:bg-[hsl(var(--toggle-idle))]'
 
 function MonthPicker({ selectedMonth, onSelect, monthKeys }) {
   const [open, setOpen] = useState(false)
@@ -36,9 +38,9 @@ function MonthPicker({ selectedMonth, onSelect, monthKeys }) {
               const key = `${viewYear}-${pad2(i + 1)}`
               const active = key === selectedMonth
               return (
-                <button key={key} type="button" onClick={() => { onSelect(key); setOpen(false) }} className={`relative rounded-lg py-2 text-xs font-medium ${active ? 'bg-blue-600 text-white' : 'hover:bg-muted'}`}>
+                <button key={key} type="button" onClick={() => { onSelect(key); setOpen(false) }} className={`relative rounded-lg py-2 text-xs font-medium ${active ? TOGGLE_ACTIVE : 'hover:bg-[hsl(var(--toggle-idle))]'}`}>
                   {label}
-                  {!active && monthSet.has(key) ? <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-500" /> : null}
+                  {!active && monthSet.has(key) ? <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[hsl(var(--toggle-active))]" /> : null}
                 </button>
               )
             })}
@@ -94,7 +96,7 @@ export default function DashboardHeader({
             ['yearly', '연별'],
             ['custom', '사용자 지정'],
           ].map(([id, label]) => (
-            <button key={id} type="button" onClick={() => setPeriodType(id)} className={`px-2.5 py-1 rounded-md text-xs font-semibold ${periodType === id ? 'bg-blue-600 text-white' : 'text-muted-foreground hover:bg-muted'}`}>
+            <button key={id} type="button" onClick={() => setPeriodType(id)} className={`px-2.5 py-1 rounded-md text-xs font-semibold ${periodType === id ? TOGGLE_ACTIVE : TOGGLE_IDLE}`}>
               {label}
             </button>
           ))}
@@ -132,8 +134,8 @@ export default function DashboardHeader({
 
         <div className="ml-auto flex items-center gap-1 rounded-lg border border-border/60 p-0.5 bg-muted/20">
           <span className="px-1.5 text-[11px] font-semibold text-muted-foreground">기준</span>
-          <button type="button" onClick={() => setCalcMode('base')} className={`px-2 py-1 rounded-md text-xs font-semibold ${calcMode === 'base' ? 'bg-background shadow-sm' : 'text-muted-foreground'}`}>기본</button>
-          <button type="button" onClick={() => setCalcMode('actual')} className={`px-2 py-1 rounded-md text-xs font-semibold ${calcMode === 'actual' ? 'bg-blue-600 text-white' : 'text-muted-foreground'}`}>실질</button>
+          <button type="button" onClick={() => setCalcMode('base')} className={`px-2 py-1 rounded-md text-xs font-semibold ${calcMode === 'base' ? TOGGLE_ACTIVE : TOGGLE_IDLE}`}>기본</button>
+          <button type="button" onClick={() => setCalcMode('actual')} className={`px-2 py-1 rounded-md text-xs font-semibold ${calcMode === 'actual' ? TOGGLE_ACTIVE : TOGGLE_IDLE}`}>실질</button>
         </div>
 
         <TooltipProvider delayDuration={150}>

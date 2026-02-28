@@ -23,6 +23,135 @@ const PAGES = {
 
 const SYSTEM_FONT_VALUE = '__system__'
 const SYSTEM_FONT_STACK = 'system-ui, -apple-system, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif'
+const DEFAULT_UI_STYLE = 'teal'
+const UI_STYLE_PRESETS = {
+  teal: {
+    light: {
+      active: '176 46% 34%',
+      activeForeground: '165 100% 97%',
+      idle: '216 26% 93%',
+      idleForeground: '220 14% 34%',
+    },
+    dark: {
+      active: '176 45% 45%',
+      activeForeground: '190 60% 10%',
+      idle: '220 20% 24%',
+      idleForeground: '220 16% 76%',
+    },
+  },
+  amber: {
+    light: {
+      active: '39 66% 55%',
+      activeForeground: '24 30% 12%',
+      idle: '220 16% 88%',
+      idleForeground: '220 14% 34%',
+    },
+    dark: {
+      active: '39 58% 47%',
+      activeForeground: '42 100% 95%',
+      idle: '222 14% 30%',
+      idleForeground: '220 14% 74%',
+    },
+  },
+  indigo: {
+    light: {
+      active: '231 46% 46%',
+      activeForeground: '225 100% 97%',
+      idle: '221 24% 93%',
+      idleForeground: '226 16% 36%',
+    },
+    dark: {
+      active: '231 58% 62%',
+      activeForeground: '232 35% 14%',
+      idle: '225 19% 26%',
+      idleForeground: '223 16% 78%',
+    },
+  },
+  rose: {
+    light: {
+      active: '342 62% 58%',
+      activeForeground: '340 100% 98%',
+      idle: '341 24% 93%',
+      idleForeground: '336 14% 36%',
+    },
+    dark: {
+      active: '343 62% 64%',
+      activeForeground: '344 34% 14%',
+      idle: '336 16% 27%',
+      idleForeground: '338 16% 80%',
+    },
+  },
+  'violet-gray': {
+    light: {
+      active: '258 26% 48%',
+      activeForeground: '260 100% 98%',
+      idle: '255 17% 92%',
+      idleForeground: '250 12% 36%',
+    },
+    dark: {
+      active: '260 32% 62%',
+      activeForeground: '258 30% 14%',
+      idle: '250 13% 27%',
+      idleForeground: '254 12% 80%',
+    },
+  },
+  cyan: {
+    light: {
+      active: '191 78% 42%',
+      activeForeground: '190 100% 97%',
+      idle: '196 34% 92%',
+      idleForeground: '198 20% 34%',
+    },
+    dark: {
+      active: '191 76% 54%',
+      activeForeground: '194 52% 12%',
+      idle: '201 20% 26%',
+      idleForeground: '198 20% 79%',
+    },
+  },
+  coral: {
+    light: {
+      active: '11 80% 59%',
+      activeForeground: '20 100% 97%',
+      idle: '16 30% 92%',
+      idleForeground: '14 16% 35%',
+    },
+    dark: {
+      active: '11 78% 64%',
+      activeForeground: '15 38% 14%',
+      idle: '14 18% 27%',
+      idleForeground: '16 18% 80%',
+    },
+  },
+  'slate-blue': {
+    light: {
+      active: '224 39% 52%',
+      activeForeground: '225 100% 97%',
+      idle: '223 22% 92%',
+      idleForeground: '223 14% 35%',
+    },
+    dark: {
+      active: '224 45% 64%',
+      activeForeground: '224 34% 14%',
+      idle: '224 16% 27%',
+      idleForeground: '223 14% 80%',
+    },
+  },
+  sand: {
+    light: {
+      active: '34 42% 56%',
+      activeForeground: '31 46% 14%',
+      idle: '34 26% 91%',
+      idleForeground: '32 14% 35%',
+    },
+    dark: {
+      active: '34 45% 62%',
+      activeForeground: '34 42% 15%',
+      idle: '32 14% 28%',
+      idleForeground: '33 16% 80%',
+    },
+  },
+}
 
 function sanitizeFontName(value) {
   const raw = String(value ?? '').trim()
@@ -36,6 +165,11 @@ function buildAppFontStack(fontValue) {
   if (!value || value === SYSTEM_FONT_VALUE) return SYSTEM_FONT_STACK
   const escaped = value.replaceAll('"', '\\"')
   return `"${escaped}", ${SYSTEM_FONT_STACK}`
+}
+
+function normalizeUiStyle(value) {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  return Object.prototype.hasOwnProperty.call(UI_STYLE_PRESETS, normalized) ? normalized : DEFAULT_UI_STYLE
 }
 
 function friendlySyncErrorMessage(value) {
@@ -113,14 +247,16 @@ function App() {
   const [globalSyncBanner, setGlobalSyncBanner] = useState(null)
   const [dismissedSyncBannerKey, setDismissedSyncBannerKey] = useState(null)
   const [appFontValue, setAppFontValue] = useState(SYSTEM_FONT_VALUE)
+  const [uiStyle, setUiStyle] = useState(DEFAULT_UI_STYLE)
 
   useEffect(() => {
     let mounted = true
     Promise.all([
       window.api.settings.get('theme_mode').catch(() => null),
       window.api.settings.get('app_font_family').catch(() => null),
+      window.api.settings.get('ui_style').catch(() => null),
     ])
-      .then(([savedTheme, savedFont]) => {
+      .then(([savedTheme, savedFont, savedUiStyle]) => {
         if (!mounted) return
         if (savedTheme != null) {
           if (savedTheme === 'dark' || savedTheme === true) setIsDark(true)
@@ -132,6 +268,7 @@ function App() {
         } else {
           setAppFontValue(SYSTEM_FONT_VALUE)
         }
+        setUiStyle(normalizeUiStyle(savedUiStyle))
       })
       .catch(() => {})
     return () => { mounted = false }
@@ -148,6 +285,16 @@ function App() {
   }, [appFontValue])
 
   useEffect(() => {
+    const preset = UI_STYLE_PRESETS[normalizeUiStyle(uiStyle)] ?? UI_STYLE_PRESETS[DEFAULT_UI_STYLE]
+    const palette = isDark ? preset.dark : preset.light
+    document.documentElement.style.setProperty('--toggle-active', palette.active)
+    document.documentElement.style.setProperty('--toggle-active-foreground', palette.activeForeground)
+    document.documentElement.style.setProperty('--toggle-idle', palette.idle)
+    document.documentElement.style.setProperty('--toggle-idle-foreground', palette.idleForeground)
+    document.documentElement.style.setProperty('--ring', palette.active)
+  }, [isDark, uiStyle])
+
+  useEffect(() => {
     function handleAppFontSaved(event) {
       const value = sanitizeFontName(event?.detail?.fontFamily)
       if (value) {
@@ -158,6 +305,14 @@ function App() {
     }
     window.addEventListener('app-font-family-saved', handleAppFontSaved)
     return () => window.removeEventListener('app-font-family-saved', handleAppFontSaved)
+  }, [])
+
+  useEffect(() => {
+    function handleUiStyleSaved(event) {
+      setUiStyle(normalizeUiStyle(event?.detail?.uiStyle))
+    }
+    window.addEventListener('app-ui-style-saved', handleUiStyleSaved)
+    return () => window.removeEventListener('app-ui-style-saved', handleUiStyleSaved)
   }, [])
 
   const refreshUncategorizedCount = useCallback(async () => {
