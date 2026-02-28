@@ -402,7 +402,13 @@ function CategoryTab({ type, categories, onReload }) {
           <DialogHeader>
             <DialogTitle>{dialogTitle}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <form
+            className="space-y-4 py-2"
+            onSubmit={async (e) => {
+              e.preventDefault()
+              await handleSave()
+            }}
+          >
             <div className="space-y-1.5">
               <Label>이름 <span className="text-destructive">*</span></Label>
               <Input
@@ -463,11 +469,11 @@ function CategoryTab({ type, categories, onReload }) {
                 </p>
               )}
             </div>
-          </div>
-          <DialogFooter>
-            <CancelButton onClick={() => setDialogOpen(false)} />
-            <SaveButton onClick={handleSave} />
-          </DialogFooter>
+            <DialogFooter>
+              <CancelButton onClick={() => setDialogOpen(false)} />
+              <SaveButton type="submit" />
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

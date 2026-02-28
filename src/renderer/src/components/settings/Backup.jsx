@@ -279,7 +279,13 @@ export default function Backup() {
             <DialogTitle>데이터 초기화 확인</DialogTitle>
             <DialogDescription>초기화를 진행하기 전에 영향 범위를 확인해 주세요.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3 text-sm">
+          <form
+            className="space-y-3 text-sm"
+            onSubmit={async (e) => {
+              e.preventDefault()
+              await handleAgreeResetEffects()
+            }}
+          >
             <div className="rounded-lg border border-amber-200/70 bg-amber-50 px-3 py-2 text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-200">
               <div className="flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
@@ -294,13 +300,13 @@ export default function Backup() {
               <li>부분 초기화는 선택한 항목만 삭제하고 화면을 새로고침합니다.</li>
             </ul>
             {previewError ? <div className="text-xs text-red-600 dark:text-red-300">{previewError}</div> : null}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setFirstModalOpen(false)} disabled={previewLoading}>취소</Button>
-            <Button onClick={handleAgreeResetEffects} disabled={previewLoading}>
-              {previewLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />확인 중...</> : '위 내용을 확인했고 영향에 동의합니다'}
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setFirstModalOpen(false)} disabled={previewLoading}>취소</Button>
+              <Button type="submit" disabled={previewLoading}>
+                {previewLoading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />확인 중...</> : '위 내용을 확인했고 영향에 동의합니다'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
@@ -310,7 +316,14 @@ export default function Backup() {
             <DialogTitle>초기화 대상 확인</DialogTitle>
             <DialogDescription>초기화할 데이터 수치를 확인한 뒤 실행해 주세요.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <form
+            className="space-y-3"
+            onSubmit={async (e) => {
+              e.preventDefault()
+              if (!canExecuteReset) return
+              await handleExecuteReset()
+            }}
+          >
             <div className="space-y-2">
               {selectedPreviewRows.map((row) => (
                 <CountRow key={row.key} label={row.label} count={row.count} helper={row.helper} />
@@ -327,13 +340,13 @@ export default function Backup() {
               />
             </div>
             {previewError ? <div className="text-xs text-red-600 dark:text-red-300">{previewError}</div> : null}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setSecondModalOpen(false)} disabled={resetting}>취소</Button>
-            <Button variant="destructive" onClick={handleExecuteReset} disabled={!canExecuteReset}>
-              {resetting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />초기화 실행 중...</> : '초기화 실행'}
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setSecondModalOpen(false)} disabled={resetting}>취소</Button>
+              <Button type="submit" variant="destructive" disabled={!canExecuteReset}>
+                {resetting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />초기화 실행 중...</> : '초기화 실행'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

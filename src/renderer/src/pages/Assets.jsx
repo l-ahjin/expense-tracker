@@ -454,7 +454,13 @@ export default function Assets() {
               <Badge variant={GROUP_TYPE_BADGE[currentGroupType]} className="text-xs">{currentGroupType}</Badge>
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <form
+            className="space-y-4 py-2"
+            onSubmit={async (e) => {
+              e.preventDefault()
+              await handleSaveAsset()
+            }}
+          >
             {/* 자산 이름 */}
             <div className="space-y-1.5">
               <Label>자산 이름 <span className="text-destructive">*</span></Label>
@@ -562,6 +568,7 @@ export default function Assets() {
                         </div>
                       </div>
                       <button
+                        type="button"
                         onClick={() => removeRule(i)}
                         className="mt-1 text-muted-foreground hover:text-destructive transition-colors"
                       >
@@ -572,11 +579,11 @@ export default function Assets() {
                 </div>
               </div>
             )}
-          </div>
-          <DialogFooter>
-            <CancelButton onClick={() => setAssetOpen(false)} />
-            <SaveButton onClick={handleSaveAsset} />
-          </DialogFooter>
+            <DialogFooter>
+              <CancelButton onClick={() => setAssetOpen(false)} />
+              <SaveButton type="submit" />
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
@@ -586,7 +593,13 @@ export default function Assets() {
           <DialogHeader>
             <DialogTitle>{editingGroup ? '그룹 수정' : '그룹 추가'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <form
+            className="space-y-4 py-2"
+            onSubmit={async (e) => {
+              e.preventDefault()
+              await handleSaveGroup()
+            }}
+          >
             <div className="space-y-1.5">
               <Label>그룹 이름 <span className="text-destructive">*</span></Label>
               <Input
@@ -606,11 +619,11 @@ export default function Assets() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <DialogFooter>
-            <CancelButton onClick={() => setGroupOpen(false)} />
-            <SaveButton onClick={handleSaveGroup} />
-          </DialogFooter>
+            <DialogFooter>
+              <CancelButton onClick={() => setGroupOpen(false)} />
+              <SaveButton type="submit" />
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

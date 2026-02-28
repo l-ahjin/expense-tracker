@@ -435,7 +435,13 @@ export default function KeywordRules() {
           <DialogHeader>
             <DialogTitle>{editing ? '규칙 수정' : '규칙 추가'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-2">
+          <form
+            className="space-y-4 py-2"
+            onSubmit={async (e) => {
+              e.preventDefault()
+              await handleSave()
+            }}
+          >
             {/* 키워드 + 매칭 타입 */}
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2 space-y-1.5">
@@ -485,11 +491,11 @@ export default function KeywordRules() {
                 placeholder="예) 4900"
               />
             </div>
-          </div>
-          <DialogFooter>
-            <CancelButton onClick={() => setDialogOpen(false)} />
-            <SaveButton onClick={handleSave} />
-          </DialogFooter>
+            <DialogFooter>
+              <CancelButton onClick={() => setDialogOpen(false)} />
+              <SaveButton type="submit" />
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

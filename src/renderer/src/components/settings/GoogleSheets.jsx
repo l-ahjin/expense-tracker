@@ -315,7 +315,13 @@ export default function GoogleSheets() {
           <DialogHeader>
             <DialogTitle>스프레드시트 ID 추출</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
+          <form
+            className="space-y-2"
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleApplySpreadsheetUrl()
+            }}
+          >
             <Label>구글 스프레드시트 URL 또는 ID</Label>
             <Input
               value={spreadsheetUrlInput}
@@ -328,15 +334,15 @@ export default function GoogleSheets() {
             {urlParseError && (
               <p className="text-sm text-red-600 dark:text-red-300">{urlParseError}</p>
             )}
-          </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setUrlDialogOpen(false)}>
-              취소
-            </Button>
-            <Button type="button" onClick={handleApplySpreadsheetUrl}>
-              적용
-            </Button>
-          </DialogFooter>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setUrlDialogOpen(false)}>
+                취소
+              </Button>
+              <Button type="submit">
+                적용
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </Card>

@@ -800,8 +800,13 @@ function AddTransactionDialog({ assets, categories, onSaved }) {
         <DialogHeader>
           <DialogTitle className="text-[15px] font-bold">거래 직접 추가</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4 py-1">
+        <form
+          className="space-y-4 py-1"
+          onSubmit={async (e) => {
+            e.preventDefault()
+            await handleSave()
+          }}
+        >
           {/* 날짜 + 자산 */}
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
@@ -914,14 +919,13 @@ function AddTransactionDialog({ assets, categories, onSaved }) {
           </div>
 
           {errors._ && <p className="text-[12px] text-destructive">{errors._}</p>}
-        </div>
-
-        <div className="flex justify-end gap-2 pt-1">
-          <CancelButton onClick={() => handleOpenChange(false)} />
-          <SaveButton onClick={handleSave} disabled={loading}>
-            {loading ? '저장 중...' : '저장'}
-          </SaveButton>
-        </div>
+          <div className="flex justify-end gap-2 pt-1">
+            <CancelButton onClick={() => handleOpenChange(false)} />
+            <SaveButton type="submit" disabled={loading}>
+              {loading ? '저장 중...' : '저장'}
+            </SaveButton>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   )
