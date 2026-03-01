@@ -336,11 +336,13 @@ export default function Assets() {
     if (!assetForm.name.trim()) errs.name = '자산 이름을 입력해주세요'
     if (currentGroupType === '체크카드' || currentGroupType === '신용카드') {
       if (!assetForm.linked_asset_id) errs.linked_asset_id = '결제 계좌를 선택해주세요'
-      if (assetForm.match_rules.length === 0) {
-        errs.match_rules = '매칭 규칙을 최소 1개 이상 추가해주세요'
-      } else {
-        const hasEmpty = assetForm.match_rules.some(r => !r.type_match_code.trim())
-        if (hasEmpty) errs.match_rules = '유형 코드를 입력해주세요'
+      const invalidRule = assetForm.match_rules.some((r) => {
+        const typeCode = String(r.type_match_code ?? '').trim()
+        const descriptionKeyword = String(r.description_match_keyword ?? '').trim()
+        return descriptionKeyword && !typeCode
+      })
+      if (invalidRule) {
+        errs.match_rules = '적요 키워드를 입력한 규칙은 유형 코드도 입력해주세요'
       }
     }
     return errs
@@ -525,7 +527,7 @@ export default function Assets() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>
-                    매칭 규칙 <span className="text-destructive">*</span>
+                    매칭 규칙 <span className="text-muted-foreground text-xs ml-1">(선택)</span>
                     <HelpTooltip text="유형 코드는 은행 거래내역의 거래 유형 열과 완전일치로 매칭해요. 적요 키워드는 적요에서 부분일치로 추가 매칭해요. 여러 규칙 중 하나라도 일치하면 이 자산으로 분류돼요." />
                   </Label>
                   <Button variant="outline" size="sm" className="h-7 text-xs" onClick={addRule}>
