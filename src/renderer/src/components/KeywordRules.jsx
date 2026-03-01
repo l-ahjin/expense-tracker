@@ -66,6 +66,12 @@ const CAT_TYPE_STYLE = {
 }
 
 const CATEGORY_TYPES = ['수입', '지출', '이체']
+const DEFAULT_FILTERS = {
+  keyword: '',
+  categoryType: '전체',
+  matchType: '전체',
+  amountMode: '전체',
+}
 
 function SortableRuleRow({ rule, onEdit, onDelete }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: rule.id })
@@ -79,6 +85,64 @@ function SortableRuleRow({ rule, onEdit, onDelete }) {
             <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground touch-none">
               <GripVertical size={14} />
             </button>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-sm font-medium">
+                  {rule.match_type === '전체일치' ? `"${rule.keyword}"` : `*${rule.keyword}*`}
+                </span>
+                {rule.amount != null && (
+                  <Badge variant="outline" className="text-xs">
+                    {Math.abs(rule.amount).toLocaleString()}원
+                  </Badge>
+                )}
+                <span className="text-muted-foreground text-xs">→</span>
+                {rule.category_name ? (
+                  <div className="flex items-center gap-1">
+                    {rule.parent_name && (
+                      <>
+                        <Badge variant="outline" className="text-xs">{rule.parent_name}</Badge>
+                        <span className="text-muted-foreground text-xs">›</span>
+                      </>
+                    )}
+                    <Badge
+                      variant={TYPE_BADGE[rule.category_type] ?? 'outline'}
+                      className={`text-xs ${TYPE_BADGE_CLASS[rule.category_type] ?? ''}`}
+                    >
+                      {rule.category_name}
+                    </Badge>
+                  </div>
+                ) : (
+                  <span className="text-xs text-muted-foreground">카테고리 없음</span>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {rule.match_type} · 우선순위 {rule.priority}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-1 shrink-0">
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onEdit(rule)}>
+              <Pencil size={13} />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-foreground" onClick={() => onDelete(rule)}>
+              <Trash2 size={13} />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function StaticRuleRow({ rule, onEdit, onDelete }) {
+  return (
+    <div>
+      <Card>
+        <CardContent className="py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">
+              <GripVertical size={14} />
+            </span>
             <div className="space-y-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm font-medium">
@@ -313,6 +377,7 @@ function CategoryPicker({ categories, value, onChange, error }) {
 export default function KeywordRules() {
   const [rules, setRules] = useState([])
   const [categories, setCategories] = useState([])
+  const [filters, setFilters] = useState(DEFAULT_FILTERS)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [editing, setEditing] = useState(null)
@@ -397,6 +462,40 @@ export default function KeywordRules() {
     setForm(f => ({ ...f, [key]: value }))
   }
 
+  function setFilter(key, value) {
+    setFilters((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const trimmedKeyword = filters.keyword.trim().toLowerCase()
+  const isFilterActive =
+    trimmedKeyword !== '' ||
+    filters.categoryType !== '전체' ||
+    filters.matchType !== '전체' ||
+    filters.amountMode !== '전체'
+
+  const filteredRules = rules.filter((rule) => {
+    if (trimmedKeyword) {
+      const haystack = [rule.keyword, rule.category_name, rule.parent_name]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      if (!haystack.includes(trimmedKeyword)) return false
+    }
+
+    if (filters.categoryType !== '전체' && rule.category_type !== filters.categoryType) {
+      return false
+    }
+
+    if (filters.matchType !== '전체' && rule.match_type !== filters.matchType) {
+      return false
+    }
+
+    if (filters.amountMode === '있음' && rule.amount == null) return false
+    if (filters.amountMode === '없음' && rule.amount != null) return false
+
+    return true
+  })
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -406,6 +505,72 @@ export default function KeywordRules() {
         </Button>
       </div>
 
+      <Card>
+        <CardContent className="py-4 space-y-3">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-4">
+            <Input
+              value={filters.keyword}
+              onChange={(e) => setFilter('keyword', e.target.value)}
+              placeholder="키워드/카테고리 검색"
+              className="md:col-span-2"
+            />
+            <Select value={filters.categoryType} onValueChange={(v) => setFilter('categoryType', v)}>
+              <SelectTrigger className="bg-background">
+                <SelectValue placeholder="카테고리 유형" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border-border">
+                <SelectItem value="전체">카테고리 유형: 전체</SelectItem>
+                <SelectItem value="수입">수입</SelectItem>
+                <SelectItem value="지출">지출</SelectItem>
+                <SelectItem value="이체">이체</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filters.matchType} onValueChange={(v) => setFilter('matchType', v)}>
+              <SelectTrigger className="bg-background">
+                <SelectValue placeholder="매칭 방식" />
+              </SelectTrigger>
+              <SelectContent className="bg-background border-border">
+                <SelectItem value="전체">매칭 방식: 전체</SelectItem>
+                <SelectItem value="부분일치">부분일치</SelectItem>
+                <SelectItem value="전체일치">전체일치</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Select value={filters.amountMode} onValueChange={(v) => setFilter('amountMode', v)}>
+                <SelectTrigger className="w-[180px] bg-background">
+                  <SelectValue placeholder="금액 조건" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border">
+                  <SelectItem value="전체">금액 조건: 전체</SelectItem>
+                  <SelectItem value="있음">금액 조건 있음</SelectItem>
+                  <SelectItem value="없음">금액 조건 없음</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setFilters(DEFAULT_FILTERS)}
+                disabled={!isFilterActive}
+              >
+                초기화
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              검색 결과 {filteredRules.length}건
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {isFilterActive && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700 dark:bg-amber-950/95 dark:text-amber-200">
+          필터가 적용된 상태에서는 우선순위 드래그 정렬을 사용할 수 없어요. 정렬은 전체 보기에서만 가능해요.
+        </div>
+      )}
+
       {rules.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground text-sm">
@@ -414,20 +579,43 @@ export default function KeywordRules() {
         </Card>
       )}
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={rules.map(r => r.id)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-2">
-            {rules.map(rule => (
-              <SortableRuleRow
-                key={rule.id}
-                rule={rule}
-                onEdit={openEdit}
-                onDelete={setDeleteTarget}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+      {rules.length > 0 && filteredRules.length === 0 && (
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground text-sm">
+            조건에 맞는 규칙이 없어요.
+          </CardContent>
+        </Card>
+      )}
+
+      {filteredRules.length > 0 && !isFilterActive && (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext items={filteredRules.map(r => r.id)} strategy={verticalListSortingStrategy}>
+            <div className="space-y-2">
+              {filteredRules.map(rule => (
+                <SortableRuleRow
+                  key={rule.id}
+                  rule={rule}
+                  onEdit={openEdit}
+                  onDelete={setDeleteTarget}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
+
+      {filteredRules.length > 0 && isFilterActive && (
+        <div className="space-y-2">
+          {filteredRules.map(rule => (
+            <StaticRuleRow
+              key={rule.id}
+              rule={rule}
+              onEdit={openEdit}
+              onDelete={setDeleteTarget}
+            />
+          ))}
+        </div>
+      )}
 
       {/* 추가/수정 다이얼로그 */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
