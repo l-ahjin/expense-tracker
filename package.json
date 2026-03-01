@@ -2,9 +2,9 @@
   "name": "expense-tracker",
   "version": "1.2.0",
   "productName": "ExpenseTracker",
-  "description": "An Electron application with React",
+  "description": "Expense Tracker",
   "main": "./out/main/index.js",
-  "author": "example.com",
+  "author": "lahjin",
   "homepage": "https://electron-vite.org",
   "scripts": {
     "format": "prettier --write .",
