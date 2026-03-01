@@ -1145,6 +1145,13 @@ function registerIpcHandlers() {
     const template = db.prepare('SELECT * FROM parser_templates WHERE id = ?').get(templateId)
     if (!template) throw new Error('템플릿을 찾을 수 없어요.')
 
+    const asset = db.prepare(`
+      SELECT a.*, ag.type as group_type
+      FROM assets a
+      LEFT JOIN asset_groups ag ON a.asset_group_id = ag.id
+      WHERE a.id = ?
+    `).get(assetId)
+
     // 비밀번호 복호화
     let password = null
     if (template.password) {
@@ -1155,7 +1162,7 @@ function registerIpcHandlers() {
     const workbook = await loadWorkbook(filePath, password)
 
     // 파싱
-    const rows = parseRows(workbook, template)
+    const rows = parseRows(workbook, template, { assetGroupType: asset?.group_type })
 
     // 자산 정보로 체크카드/신용카드 분류
     const allAssets = db.prepare(`
@@ -1181,13 +1188,6 @@ function registerIpcHandlers() {
     const cardPaymentCategoryId = getCardPaymentCategoryId()
     const classified = classifyRows(rows, assetsWithRules, cardPaymentCategoryId)
     const withCategories = applyKeywordRules(classified, rules)
-
-    const asset = db.prepare(`
-      SELECT a.*, ag.type as group_type
-      FROM assets a
-      LEFT JOIN asset_groups ag ON a.asset_group_id = ag.id
-      WHERE a.id = ?
-    `).get(assetId)
 
     // 기존 거래내역 존재 여부 확인
     const hasExistingTransactions = db.prepare(
@@ -1294,8 +1294,23 @@ function registerIpcHandlers() {
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `)
 
+      // 가져오기 목록이 최신순(내림차순)일 경우, DB에는 과거순(오름차순)으로 저장한다.
+      const rowsToSave = [...rows]
+      const selectedForOrderCheck = rowsToSave.filter((r) => r.selected && !r.isDuplicate && r.date)
+      if (selectedForOrderCheck.length >= 2) {
+        const isDescendingByDate = selectedForOrderCheck.every((row, idx, arr) => (
+          idx === 0 || String(arr[idx - 1].date) >= String(row.date)
+        ))
+        const isAscendingByDate = selectedForOrderCheck.every((row, idx, arr) => (
+          idx === 0 || String(arr[idx - 1].date) <= String(row.date)
+        ))
+        if (isDescendingByDate && !isAscendingByDate) {
+          rowsToSave.reverse()
+        }
+      }
+
       let savedCount = 0
-      for (const row of rows) {
+      for (const row of rowsToSave) {
         if (row.isDuplicate || !row.selected) continue
         if (row.category_id) {
           assertCategoryDirectionPolicy(db, row.category_id, row.direction)

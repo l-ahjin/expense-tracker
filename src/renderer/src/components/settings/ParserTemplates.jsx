@@ -120,13 +120,17 @@ export default function ParserTemplates() {
   function openEdit(template) {
     setEditing(template)
     setErrors({})
+    const normalizedAmountType =
+      template.connection_type === '신용카드' && template.amount_type === 'split'
+        ? 'single'
+        : template.amount_type
     setForm({
       name: template.name,
       connection_type: template.connection_type,
       password: template.password ?? '',
       memo: template.memo ?? '',
       start_row: template.start_row,
-      amount_type: template.amount_type,
+      amount_type: normalizedAmountType,
       col_date: template.col_date ?? '',
       col_description: template.col_description ?? '',
       col_amount: template.col_amount ?? '',
@@ -141,8 +145,12 @@ export default function ParserTemplates() {
   function handleConnectionTypeChange(value) {
     set('connection_type', value)
     if (value === '신용카드') {
-      set('amount_type', 'expense_only')
-    } else {
+      // 신용카드 기본은 single 권장(+지출 / -수입). 기존 설정(expense_only 등)은 유지.
+      if (!form.amount_type || form.amount_type === 'split') {
+        set('amount_type', 'single')
+      }
+    } else if (form.amount_type === 'expense_only') {
+      // 은행/체크카드로 전환 시 expense_only는 사용하지 않도록 기본값으로 복귀.
       set('amount_type', 'split')
     }
   }
@@ -408,21 +416,24 @@ export default function ParserTemplates() {
 
             <div className="space-y-1.5">
               <Label>금액 열 타입</Label>
-              {isCreditCard ? (
-                <div className="flex h-9 items-center px-3 rounded-md border border-border bg-muted text-sm text-muted-foreground">
-                  지출만 (신용카드 고정)
-                </div>
-              ) : (
-                <Select value={form.amount_type} onValueChange={v => set('amount_type', v)}>
-                  <SelectTrigger className="bg-background">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-background border-border">
-                    <SelectItem value="split">입금/출금 분리</SelectItem>
-                    <SelectItem value="single">단일 컬럼 양수/음수</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
+              <Select value={form.amount_type} onValueChange={v => set('amount_type', v)}>
+                <SelectTrigger className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border">
+                  {isCreditCard ? (
+                    <>
+                      <SelectItem value="single">음수(-)=수입, 양수(+)=지출로 가져오기</SelectItem>
+                      <SelectItem value="expense_only">양수(+) 금액만 지출로 가져오기</SelectItem>
+                    </>
+                  ) : (
+                    <>
+                      <SelectItem value="split">입금/출금 분리</SelectItem>
+                      <SelectItem value="single">단일 컬럼 양수/음수</SelectItem>
+                    </>
+                  )}
+                </SelectContent>
+              </Select>
             </div>
 
             {form.amount_type === 'split' ? (

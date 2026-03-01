@@ -47,7 +47,7 @@ export async function loadWorkbook(filePath, password) {
 }
 
 // 템플릿 기반으로 엑셀 파싱
-export function parseRows(workbook, template) {
+export function parseRows(workbook, template, options = {}) {
   const sheetName = workbook.SheetNames[0]
   const sheet = workbook.Sheets[sheetName]
 
@@ -76,6 +76,13 @@ export function parseRows(workbook, template) {
   const dataRows = raw.slice(template.start_row - 1)
 
   const results = []
+  const isCreditCardSingle =
+    template.amount_type === 'single' &&
+    (
+      String(template.connection_type ?? '').trim() === '신용카드' ||
+      String(options.assetGroupType ?? '').trim() === '신용카드'
+    )
+
   for (const row of dataRows) {
     // 날짜 추출
     const rawDate = colDate !== null ? row[colDate] : null
@@ -96,8 +103,14 @@ export function parseRows(workbook, template) {
       amountOut = parseAmount(colAmountOut !== null ? row[colAmountOut] : null)
     } else if (template.amount_type === 'single') {
       const val = parseAmount(colAmount !== null ? row[colAmount] : null)
-      if (val > 0) amountIn = val
-      else amountOut = Math.abs(val)
+      if (isCreditCardSingle) {
+        // 신용카드 단일 컬럼: +는 지출, -는 수입
+        if (val > 0) amountOut = val
+        else if (val < 0) amountIn = Math.abs(val)
+      } else {
+        if (val > 0) amountIn = val
+        else amountOut = Math.abs(val)
+      }
     } else if (template.amount_type === 'expense_only') {
       amountOut = parseAmount(colAmount !== null ? row[colAmount] : null)
     }
