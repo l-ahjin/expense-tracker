@@ -437,6 +437,21 @@ function registerIpcHandlers() {
   })
 
   ipcMain.handle('assets:update', (_, id, data) => {
+    const current = db.prepare('SELECT id, asset_group_id FROM assets WHERE id = ?').get(id)
+    if (!current) throw new Error('자산을 찾을 수 없어요.')
+
+    const nextGroupId = data.asset_group_id ?? null
+    if (nextGroupId && Number(nextGroupId) !== Number(current.asset_group_id)) {
+      const sourceGroup = db.prepare('SELECT id, type FROM asset_groups WHERE id = ?').get(current.asset_group_id)
+      const targetGroup = db.prepare('SELECT id, type FROM asset_groups WHERE id = ?').get(nextGroupId)
+      if (!sourceGroup || !targetGroup) {
+        throw new Error('자산 그룹을 찾을 수 없어요.')
+      }
+      if (sourceGroup.type !== targetGroup.type) {
+        throw new Error('서로 다른 유형의 그룹으로는 이동할 수 없어요.')
+      }
+    }
+
     db.prepare(`
       UPDATE assets
       SET name = ?, asset_group_id = ?, is_active = ?,
@@ -472,6 +487,31 @@ function registerIpcHandlers() {
   ipcMain.handle('assets:reorder', (_, groupId, orderedIds) => {
     const update = db.prepare('UPDATE assets SET sort_order = ? WHERE id = ?')
     const tx = db.transaction(() => { orderedIds.forEach((id, i) => update.run(i, id)) })
+    tx()
+  })
+
+  ipcMain.handle('assets:move', (_, assetId, targetGroupId, sourceOrderedIds, targetOrderedIds) => {
+    const numericAssetId = Number(assetId)
+    const numericTargetGroupId = Number(targetGroupId)
+    const sourceIds = Array.isArray(sourceOrderedIds) ? sourceOrderedIds.map((id) => Number(id)) : []
+    const targetIds = Array.isArray(targetOrderedIds) ? targetOrderedIds.map((id) => Number(id)) : []
+
+    const assetRow = db.prepare('SELECT id, asset_group_id FROM assets WHERE id = ?').get(numericAssetId)
+    if (!assetRow) throw new Error('이동할 자산을 찾을 수 없어요.')
+
+    const sourceGroup = db.prepare('SELECT id, type FROM asset_groups WHERE id = ?').get(assetRow.asset_group_id)
+    const targetGroup = db.prepare('SELECT id, type FROM asset_groups WHERE id = ?').get(numericTargetGroupId)
+    if (!sourceGroup || !targetGroup) throw new Error('자산 그룹을 찾을 수 없어요.')
+    if (sourceGroup.type !== targetGroup.type) {
+      throw new Error('서로 다른 유형의 그룹으로는 이동할 수 없어요.')
+    }
+
+    const updateSortOrder = db.prepare('UPDATE assets SET sort_order = ? WHERE id = ?')
+    const tx = db.transaction(() => {
+      db.prepare('UPDATE assets SET asset_group_id = ? WHERE id = ?').run(numericTargetGroupId, numericAssetId)
+      sourceIds.forEach((id, index) => updateSortOrder.run(index, id))
+      targetIds.forEach((id, index) => updateSortOrder.run(index, id))
+    })
     tx()
   })
 

@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('api', {
     update: (id, data) => ipcRenderer.invoke('assets:update', id, data),
     delete: (id) => ipcRenderer.invoke('assets:delete', id),
     reorder: (groupId, orderedIds) => ipcRenderer.invoke('assets:reorder', groupId, orderedIds),
+    move: (assetId, targetGroupId, sourceOrderedIds, targetOrderedIds) =>
+      ipcRenderer.invoke('assets:move', assetId, targetGroupId, sourceOrderedIds, targetOrderedIds),
   },
 
   // 카테고리

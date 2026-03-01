@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
-  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useDroppable, useSensor, useSensors
 } from '@dnd-kit/core'
 import {
   SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy,
@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { SaveButton, CancelButton } from '@/components/ui/confirm-buttons'
-import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, HelpCircle, GripVertical, X } from 'lucide-react'
+import { Plus, Pencil, Trash2, ChevronDown, ChevronRight, HelpCircle, GripVertical, X, AlertTriangle } from 'lucide-react'
 
 const GROUP_TYPES = ['일반', '신용카드', '체크카드']
 const EMPTY_GROUP_FORM = { name: '', type: '일반' }
@@ -194,6 +194,20 @@ function SortableGroupRow({ group, assetCount, collapsed, onToggleCollapse, onAd
   )
 }
 
+function GroupDropZone({ groupId, children }) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `asset-drop-group-${groupId}`,
+  })
+  return (
+    <div
+      ref={setNodeRef}
+      className={`space-y-1.5 pl-6 rounded-lg transition-colors ${isOver ? 'bg-[hsl(var(--toggle-active))]/10' : ''}`}
+    >
+      {children}
+    </div>
+  )
+}
+
 export default function Assets() {
   const [groups, setGroups] = useState([])
   const [assets, setAssets] = useState([])
@@ -210,6 +224,8 @@ export default function Assets() {
   const [currentGroupType, setCurrentGroupType] = useState('일반')
   const [assetErrors, setAssetErrors] = useState({})
   const [groupErrors, setGroupErrors] = useState({})
+  const [dragFeedback, setDragFeedback] = useState('')
+  const dragFeedbackTimerRef = useRef(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -217,6 +233,15 @@ export default function Assets() {
   )
 
   useEffect(() => { load() }, [])
+  useEffect(() => () => {
+    if (dragFeedbackTimerRef.current) clearTimeout(dragFeedbackTimerRef.current)
+  }, [])
+
+  function showDragFeedback(message) {
+    setDragFeedback(message)
+    if (dragFeedbackTimerRef.current) clearTimeout(dragFeedbackTimerRef.current)
+    dragFeedbackTimerRef.current = setTimeout(() => setDragFeedback(''), 2200)
+  }
 
   async function load() {
     const [g, a, t] = await Promise.all([
@@ -251,15 +276,78 @@ export default function Assets() {
     await window.api.assetGroups.reorder(reordered.map(g => g.id))
   }
 
-  async function handleAssetDragEnd(event, groupId) {
+  function resolveTargetGroupId(overId) {
+    const overKey = String(overId ?? '')
+    if (overKey.startsWith('asset-drop-group-')) {
+      return Number(overKey.replace('asset-drop-group-', ''))
+    }
+    const overAsset = assets.find((a) => String(a.id) === overKey)
+    return overAsset?.asset_group_id ?? null
+  }
+
+  function insertAt(list, item, index) {
+    const safeIndex = Math.max(0, Math.min(index, list.length))
+    return [...list.slice(0, safeIndex), item, ...list.slice(safeIndex)]
+  }
+
+  async function handleAssetDragEnd(event) {
     const { active, over } = event
-    if (!over || active.id === over.id) return
-    const groupAssets = assetsByGroup(groupId)
-    const oldIndex = groupAssets.findIndex(a => a.id === active.id)
-    const newIndex = groupAssets.findIndex(a => a.id === over.id)
-    const reordered = arrayMove(groupAssets, oldIndex, newIndex)
-    setAssets(prev => [...prev.filter(a => a.asset_group_id !== groupId), ...reordered])
-    await window.api.assets.reorder(groupId, reordered.map(a => a.id))
+    if (!over) return
+
+    const activeId = Number(active.id)
+    const movingAsset = assets.find((a) => a.id === activeId)
+    if (!movingAsset) return
+
+    const fromGroupId = movingAsset.asset_group_id
+    const toGroupId = resolveTargetGroupId(over.id)
+    if (!toGroupId) return
+
+    const fromGroup = groups.find((g) => g.id === fromGroupId)
+    const toGroup = groups.find((g) => g.id === toGroupId)
+    if (!fromGroup || !toGroup) return
+    if (fromGroup.type !== toGroup.type) {
+      showDragFeedback(`"${fromGroup.type}" 자산은 "${toGroup.type}" 그룹으로 이동할 수 없어요.`)
+      return
+    }
+
+    const fromAssets = assetsByGroup(fromGroupId)
+    const moving = fromAssets.find((a) => a.id === activeId)
+    if (!moving) return
+
+    if (fromGroupId === toGroupId) {
+      if (active.id === over.id) return
+      const oldIndex = fromAssets.findIndex((a) => a.id === activeId)
+      const newIndex = fromAssets.findIndex((a) => a.id === Number(over.id))
+      if (oldIndex < 0 || newIndex < 0) return
+      const reordered = arrayMove(fromAssets, oldIndex, newIndex)
+      setAssets((prev) => [...prev.filter((a) => a.asset_group_id !== fromGroupId), ...reordered])
+      await window.api.assets.reorder(fromGroupId, reordered.map((a) => a.id))
+      return
+    }
+
+    const sourceRemaining = fromAssets.filter((a) => a.id !== activeId)
+    const targetAssets = assetsByGroup(toGroupId)
+    const overAsset = targetAssets.find((a) => a.id === Number(over.id))
+    const insertIndex = overAsset ? targetAssets.findIndex((a) => a.id === overAsset.id) : targetAssets.length
+    const movedAsset = { ...moving, asset_group_id: toGroupId }
+    const targetNext = insertAt(targetAssets, movedAsset, insertIndex)
+
+    const groupedMap = new Map()
+    groups.forEach((group) => {
+      if (group.id === fromGroupId) groupedMap.set(group.id, sourceRemaining)
+      else if (group.id === toGroupId) groupedMap.set(group.id, targetNext)
+      else groupedMap.set(group.id, assetsByGroup(group.id))
+    })
+
+    const nextAssets = groups.flatMap((group) => groupedMap.get(group.id) ?? [])
+    setAssets(nextAssets)
+
+    await window.api.assets.move(
+      activeId,
+      toGroupId,
+      sourceRemaining.map((a) => a.id),
+      targetNext.map((a) => a.id),
+    )
   }
 
   // 매칭 규칙 추가
@@ -334,6 +422,7 @@ export default function Assets() {
   function validateAsset() {
     const errs = {}
     if (!assetForm.name.trim()) errs.name = '자산 이름을 입력해주세요'
+    if (!assetForm.asset_group_id) errs.asset_group_id = '자산 그룹을 선택해주세요'
     if (currentGroupType === '체크카드' || currentGroupType === '신용카드') {
       if (!assetForm.linked_asset_id) errs.linked_asset_id = '결제 계좌를 선택해주세요'
       const invalidRule = assetForm.match_rules.some((r) => {
@@ -377,6 +466,10 @@ export default function Assets() {
   function setA(key, value) {
     setAssetErrors(e => ({ ...e, [key]: undefined }))
     setAssetForm(f => ({ ...f, [key]: value }))
+    if (key === 'asset_group_id') {
+      const nextGroup = groups.find((g) => String(g.id) === String(value))
+      if (nextGroup) setCurrentGroupType(nextGroup.type)
+    }
   }
   function setG(key, value) {
     setGroupErrors(e => ({ ...e, [key]: undefined }))
@@ -384,6 +477,7 @@ export default function Assets() {
   }
 
   const isCardType = currentGroupType === '체크카드' || currentGroupType === '신용카드'
+  const selectableGroups = groups.filter((g) => g.type === currentGroupType)
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
@@ -393,6 +487,17 @@ export default function Assets() {
           <Plus size={14} className="mr-1" /> 그룹 추가
         </Button>
       </div>
+
+      {dragFeedback ? (
+        <div className="pointer-events-none fixed left-56 right-0 top-16 z-50 flex justify-center px-6">
+          <div className="pointer-events-auto w-full max-w-4xl">
+            <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 shadow-xl dark:border-amber-700 dark:bg-amber-950/95 dark:text-amber-200">
+              <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+              <p>{dragFeedback}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {groups.length === 0 && (
         <Card>
@@ -404,46 +509,44 @@ export default function Assets() {
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleGroupDragEnd}>
         <SortableContext items={groups.map(g => `group-${g.id}`)} strategy={verticalListSortingStrategy}>
-          <div className="space-y-3">
-            {groups.map(group => {
-              const groupAssets = assetsByGroup(group.id)
-              return (
-                <SortableGroupRow
-                  key={group.id}
-                  group={group}
-                  assetCount={groupAssets.length}
-                  collapsed={collapsed[group.id]}
-                  onToggleCollapse={id => setCollapsed(c => ({ ...c, [id]: !c[id] }))}
-                  onAddAsset={openCreateAsset}
-                  onEdit={openEditGroup}
-                  onDelete={setDeleteGroupTarget}
-                >
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={e => handleAssetDragEnd(e, group.id)}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleAssetDragEnd}>
+            <div className="space-y-3">
+              {groups.map(group => {
+                const groupAssets = assetsByGroup(group.id)
+                return (
+                  <SortableGroupRow
+                    key={group.id}
+                    group={group}
+                    assetCount={groupAssets.length}
+                    collapsed={collapsed[group.id]}
+                    onToggleCollapse={id => setCollapsed(c => ({ ...c, [id]: !c[id] }))}
+                    onAddAsset={openCreateAsset}
+                    onEdit={openEditGroup}
+                    onDelete={setDeleteGroupTarget}
                   >
-                    <SortableContext items={groupAssets.map(a => a.id)} strategy={verticalListSortingStrategy}>
-                      {groupAssets.length === 0 ? (
-                        <p className="text-xs text-muted-foreground px-3 py-2">자산을 추가해주세요.</p>
-                      ) : (
-                        groupAssets.map(asset => (
-                          <SortableAssetCard
-                            key={asset.id}
-                            asset={asset}
-                            groupType={group.type}
-                            onEdit={openEditAsset}
-                            onDelete={setDeleteAssetTarget}
-                            onToggleActive={handleToggleActive}
-                          />
-                        ))
-                      )}
-                    </SortableContext>
-                  </DndContext>
-                </SortableGroupRow>
-              )
-            })}
-          </div>
+                    <GroupDropZone groupId={group.id}>
+                      <SortableContext items={groupAssets.map(a => a.id)} strategy={verticalListSortingStrategy}>
+                        {groupAssets.length === 0 ? (
+                          <p className="text-xs text-muted-foreground px-3 py-2">자산을 추가해주세요.</p>
+                        ) : (
+                          groupAssets.map(asset => (
+                            <SortableAssetCard
+                              key={asset.id}
+                              asset={asset}
+                              groupType={group.type}
+                              onEdit={openEditAsset}
+                              onDelete={setDeleteAssetTarget}
+                              onToggleActive={handleToggleActive}
+                            />
+                          ))
+                        )}
+                      </SortableContext>
+                    </GroupDropZone>
+                  </SortableGroupRow>
+                )
+              })}
+            </div>
+          </DndContext>
         </SortableContext>
       </DndContext>
 
@@ -476,6 +579,23 @@ export default function Assets() {
                 className={assetErrors.name ? 'border-destructive' : ''}
               />
               {assetErrors.name && <p className="text-xs text-destructive">{assetErrors.name}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>자산 그룹 <span className="text-destructive">*</span></Label>
+              <Select value={assetForm.asset_group_id} onValueChange={(v) => setA('asset_group_id', v)}>
+                <SelectTrigger className={`bg-background ${assetErrors.asset_group_id ? 'border-destructive' : ''}`}>
+                  <SelectValue placeholder="그룹 선택" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border-border">
+                  {selectableGroups.map((group) => (
+                    <SelectItem key={group.id} value={String(group.id)}>
+                      {group.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {assetErrors.asset_group_id && <p className="text-xs text-destructive">{assetErrors.asset_group_id}</p>}
             </div>
 
 
@@ -666,6 +786,7 @@ export default function Assets() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
     </div>
   )
 }
